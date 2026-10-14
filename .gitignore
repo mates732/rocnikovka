@@ -5,3 +5,7 @@ app/dist/
 .env
 .env.*
 *.local
+
+# Documented, committed on purpose — see app/DEPLOYMENT.md.
+# Real secrets still belong in .env / .env.* which stay ignored above.
+!app/.env.example

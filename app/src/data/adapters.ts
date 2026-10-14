@@ -35,6 +35,7 @@ import type {
   UploadImageInput,
 } from "../types/write";
 import { apiErrorFromResponse } from "../services/apiError.ts";
+import { apiUrl } from "./apiBase.ts";
 
 /**
  * Error handling contract for every HTTP method below:
@@ -52,27 +53,27 @@ async function parseData<T>(response: Response): Promise<T> {
 
 export class HttpPlantService implements PlantService {
   async listPlants(): Promise<Plant[]> {
-    const response = await fetch("/api/plants");
+    const response = await fetch(apiUrl("/api/plants"));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Plant[]>(response);
   }
 
   async getPlantById(plantId: string): Promise<Plant | null> {
-    const response = await fetch(`/api/plants/${encodeURIComponent(plantId)}`);
+    const response = await fetch(apiUrl(`/api/plants/${encodeURIComponent(plantId)}`));
     if (response.status === 404) return null;
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Plant>(response);
   }
 
   async getDayContext(plantId: string): Promise<PlantDayContext | null> {
-    const response = await fetch(`/api/plants/${encodeURIComponent(plantId)}/day-context`);
+    const response = await fetch(apiUrl(`/api/plants/${encodeURIComponent(plantId)}/day-context`));
     if (response.status === 404) return null;
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<PlantDayContext>(response);
   }
 
   async createPlant(input: CreatePlantInput): Promise<Plant> {
-    const response = await fetch("/api/plants", {
+    const response = await fetch(apiUrl("/api/plants"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -84,13 +85,13 @@ export class HttpPlantService implements PlantService {
 
 export class HttpImageService implements ImageService {
   async listImages(): Promise<ImageRecord[]> {
-    const response = await fetch("/api/images");
+    const response = await fetch(apiUrl("/api/images"));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<ImageRecord[]>(response);
   }
 
   async getImageById(imageId: string): Promise<ImageRecord | null> {
-    const response = await fetch(`/api/images/${encodeURIComponent(imageId)}`);
+    const response = await fetch(apiUrl(`/api/images/${encodeURIComponent(imageId)}`));
     if (response.status === 404) return null;
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<ImageRecord>(response);
@@ -114,7 +115,7 @@ export class HttpImageService implements ImageService {
     if (input.failure_code) form.append("failure_code", input.failure_code);
     if (input.notes) form.append("notes", input.notes);
 
-    const response = await fetch("/api/images/upload", {
+    const response = await fetch(apiUrl("/api/images/upload"), {
       method: "POST",
       body: form,
     });
@@ -125,7 +126,7 @@ export class HttpImageService implements ImageService {
   /** True when the controlled serving route returns the stored file. */
   async verifyImageFile(imageId: string): Promise<boolean> {
     try {
-      const response = await fetch(`/api/images/${encodeURIComponent(imageId)}/file`);
+      const response = await fetch(apiUrl(`/api/images/${encodeURIComponent(imageId)}/file`));
       return response.ok;
     } catch {
       return false;
@@ -135,26 +136,26 @@ export class HttpImageService implements ImageService {
 
 export class HttpMeasurementService implements MeasurementService {
   async listManualMeasurements(): Promise<ManualMeasurement[]> {
-    const response = await fetch("/api/manual-measurements");
+    const response = await fetch(apiUrl("/api/manual-measurements"));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<ManualMeasurement[]>(response);
   }
 
   async getManualMeasurementById(measurementId: string): Promise<ManualMeasurement | null> {
-    const response = await fetch(`/api/manual-measurements/${encodeURIComponent(measurementId)}`);
+    const response = await fetch(apiUrl(`/api/manual-measurements/${encodeURIComponent(measurementId)}`));
     if (response.status === 404) return null;
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<ManualMeasurement>(response);
   }
 
   async listAICVMeasurements(): Promise<AICVMeasurement[]> {
-    const response = await fetch("/api/aicv-measurements");
+    const response = await fetch(apiUrl("/api/aicv-measurements"));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<AICVMeasurement[]>(response);
   }
 
   async getAICVMeasurementById(measurementId: string): Promise<AICVMeasurement | null> {
-    const response = await fetch(`/api/aicv-measurements/${encodeURIComponent(measurementId)}`);
+    const response = await fetch(apiUrl(`/api/aicv-measurements/${encodeURIComponent(measurementId)}`));
     if (response.status === 404) return null;
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<AICVMeasurement>(response);
@@ -165,7 +166,7 @@ export class HttpMeasurementService implements MeasurementService {
    * entity fields that are server-owned must never be spread into the request.
    */
   async createManualMeasurement(input: CreateManualMeasurementInput): Promise<ManualMeasurement> {
-    const response = await fetch("/api/manual-measurements", {
+    const response = await fetch(apiUrl("/api/manual-measurements"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -175,7 +176,7 @@ export class HttpMeasurementService implements MeasurementService {
   }
 
   async createAICVMeasurement(input: CreateAICVMeasurementInput): Promise<AICVMeasurement> {
-    const response = await fetch("/api/aicv-measurements", {
+    const response = await fetch(apiUrl("/api/aicv-measurements"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -205,13 +206,13 @@ export class EmptyAIService implements AIService {
 
 export class HttpWaterService implements WaterService {
   async listWaterEvents(): Promise<WaterEvent[]> {
-    const response = await fetch("/api/water-events");
+    const response = await fetch(apiUrl("/api/water-events"));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<WaterEvent[]>(response);
   }
 
   async createWaterEvent(input: CreateWaterEventInput): Promise<WaterEvent> {
-    const response = await fetch("/api/water-events", {
+    const response = await fetch(apiUrl("/api/water-events"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -223,13 +224,13 @@ export class HttpWaterService implements WaterService {
 
 export class HttpPositionService implements PositionService {
   async listPositionEvents(): Promise<PositionEvent[]> {
-    const response = await fetch("/api/position-events");
+    const response = await fetch(apiUrl("/api/position-events"));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<PositionEvent[]>(response);
   }
 
   async createPositionEvent(input: CreatePositionEventInput): Promise<PositionEvent> {
-    const response = await fetch("/api/position-events", {
+    const response = await fetch(apiUrl("/api/position-events"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -242,19 +243,19 @@ export class HttpPositionService implements PositionService {
 // Day 0 HTTP service adapters
 export class HttpDay0EquipmentService implements Day0EquipmentService {
   async list(): Promise<Day0Equipment[]> {
-    const response = await fetch("/api/day0/equipment");
+    const response = await fetch(apiUrl("/api/day0/equipment"));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Day0Equipment[]>(response);
   }
 
   async getById(id: string): Promise<Day0Equipment> {
-    const response = await fetch(`/api/day0/equipment/${encodeURIComponent(id)}`);
+    const response = await fetch(apiUrl(`/api/day0/equipment/${encodeURIComponent(id)}`));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Day0Equipment>(response);
   }
 
   async create(input: Day0Equipment): Promise<Day0Equipment> {
-    const response = await fetch("/api/day0/equipment", {
+    const response = await fetch(apiUrl("/api/day0/equipment"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -264,7 +265,7 @@ export class HttpDay0EquipmentService implements Day0EquipmentService {
   }
 
   async update(id: string, input: Partial<Day0Equipment>): Promise<Day0Equipment> {
-    const response = await fetch(`/api/day0/equipment/${encodeURIComponent(id)}`, {
+    const response = await fetch(apiUrl(`/api/day0/equipment/${encodeURIComponent(id)}`), {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -276,14 +277,14 @@ export class HttpDay0EquipmentService implements Day0EquipmentService {
 
 export class HttpDay0PhysicalConfigService implements Day0PhysicalConfigService {
   async get(): Promise<Day0PhysicalConfig | undefined> {
-    const response = await fetch("/api/day0/physical-config");
+    const response = await fetch(apiUrl("/api/day0/physical-config"));
     if (response.status === 404) return undefined;
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Day0PhysicalConfig>(response);
   }
 
   async create(input: Day0PhysicalConfig): Promise<Day0PhysicalConfig> {
-    const response = await fetch("/api/day0/physical-config", {
+    const response = await fetch(apiUrl("/api/day0/physical-config"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -293,7 +294,7 @@ export class HttpDay0PhysicalConfigService implements Day0PhysicalConfigService 
   }
 
   async update(input: Partial<Day0PhysicalConfig>): Promise<Day0PhysicalConfig> {
-    const response = await fetch("/api/day0/physical-config", {
+    const response = await fetch(apiUrl("/api/day0/physical-config"), {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -305,26 +306,26 @@ export class HttpDay0PhysicalConfigService implements Day0PhysicalConfigService 
 
 export class HttpDay0PotAllocationService implements Day0PotAllocationService {
   async list(): Promise<Day0PotAllocation[]> {
-    const response = await fetch("/api/day0/pot-allocation");
+    const response = await fetch(apiUrl("/api/day0/pot-allocation"));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Day0PotAllocation[]>(response);
   }
 
   async getById(id: string): Promise<Day0PotAllocation> {
-    const response = await fetch(`/api/day0/pot-allocation/${encodeURIComponent(id)}`);
+    const response = await fetch(apiUrl(`/api/day0/pot-allocation/${encodeURIComponent(id)}`));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Day0PotAllocation>(response);
   }
 
   async getByPotId(potId: string): Promise<Day0PotAllocation | undefined> {
-    const response = await fetch(`/api/day0/pot-allocation/${encodeURIComponent(potId)}`);
+    const response = await fetch(apiUrl(`/api/day0/pot-allocation/${encodeURIComponent(potId)}`));
     if (response.status === 404) return undefined;
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Day0PotAllocation>(response);
   }
 
   async create(input: Day0PotAllocation): Promise<Day0PotAllocation> {
-    const response = await fetch("/api/day0/pot-allocation", {
+    const response = await fetch(apiUrl("/api/day0/pot-allocation"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -334,7 +335,7 @@ export class HttpDay0PotAllocationService implements Day0PotAllocationService {
   }
 
   async update(id: string, input: Partial<Day0PotAllocation>): Promise<Day0PotAllocation> {
-    const response = await fetch(`/api/day0/pot-allocation/${encodeURIComponent(id)}`, {
+    const response = await fetch(apiUrl(`/api/day0/pot-allocation/${encodeURIComponent(id)}`), {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -346,19 +347,19 @@ export class HttpDay0PotAllocationService implements Day0PotAllocationService {
 
 export class HttpDay0MethodologyDecisionService implements Day0MethodologyDecisionService {
   async list(): Promise<Day0MethodologyDecision[]> {
-    const response = await fetch("/api/day0/methodology-decisions");
+    const response = await fetch(apiUrl("/api/day0/methodology-decisions"));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Day0MethodologyDecision[]>(response);
   }
 
   async getById(id: string): Promise<Day0MethodologyDecision> {
-    const response = await fetch(`/api/day0/methodology-decisions/${encodeURIComponent(id)}`);
+    const response = await fetch(apiUrl(`/api/day0/methodology-decisions/${encodeURIComponent(id)}`));
     if (!response.ok) throw await apiErrorFromResponse(response);
     return parseData<Day0MethodologyDecision>(response);
   }
 
   async create(input: Day0MethodologyDecision): Promise<Day0MethodologyDecision> {
-    const response = await fetch("/api/day0/methodology-decisions", {
+    const response = await fetch(apiUrl("/api/day0/methodology-decisions"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
@@ -368,7 +369,7 @@ export class HttpDay0MethodologyDecisionService implements Day0MethodologyDecisi
   }
 
   async update(id: string, input: Partial<Day0MethodologyDecision>): Promise<Day0MethodologyDecision> {
-    const response = await fetch(`/api/day0/methodology-decisions/${encodeURIComponent(id)}`, {
+    const response = await fetch(apiUrl(`/api/day0/methodology-decisions/${encodeURIComponent(id)}`), {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),

@@ -5,6 +5,7 @@ import { StatusBadge } from "../components/StatusBadge";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorSummary } from "../components/ErrorSummary";
 import { services } from "../data/adapters";
+import { apiUrl } from "../data/apiBase";
 import type { Day0MethodologyDecisionService } from "../services/interfaces";
 import type { Day0MethodologyDecision, DecisionStatus } from "../types/entities";
 
@@ -23,7 +24,7 @@ export function Day0MethodologyPage({ services: deps = services }: Day0Methodolo
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/day0/methodology-decisions");
+        const res = await fetch(apiUrl("/api/day0/methodology-decisions"));
         if (res.ok) {
           const data = await res.json();
           if (!cancelled) setDecisions(data.data);

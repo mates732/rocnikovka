@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ErrorSummary } from "../components/ErrorSummary";
 import { EvidenceThumb } from "../components/EvidenceThumb";
 import { services } from "../data/adapters";
+import { describeApiOrigin, hasExternalApiBase } from "../data/apiBase";
 import { imageFileUrl } from "./ImagesPage";
 import type { ImageService, MeasurementService, PlantService, PositionService, WaterService } from "../services/interfaces";
 import type { AICVMeasurement, ImageRecord, ManualMeasurement, Plant, PositionEvent, WaterEvent } from "../types/entities";
@@ -238,6 +239,12 @@ export function OverviewPage({ services: deps = services }: OverviewPageProps = 
               </li>
             ))}
           </ul>
+          <p className="muted-note">
+            API origin: <code>{describeApiOrigin()}</code>
+            {hasExternalApiBase
+              ? ""
+              : " — no backend is deployed on this origin, so every /api/* request returns HTTP 404."}
+          </p>
         </div>
       ) : null}
 

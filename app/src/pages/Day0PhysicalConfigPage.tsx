@@ -3,6 +3,7 @@ import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorSummary } from "../components/ErrorSummary";
 import { services } from "../data/adapters";
+import { apiUrl } from "../data/apiBase";
 import { DAY0_PLAN } from "../data/day0Plan";
 import type { Day0PhysicalConfigService } from "../services/interfaces";
 import type { Day0PhysicalConfig } from "../types/entities";
@@ -51,7 +52,7 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/day0/physical-config");
+        const res = await fetch(apiUrl("/api/day0/physical-config"));
         if (res.ok) {
           const data = await res.json();
           if (!cancelled) setConfig(data.data);
@@ -141,7 +142,7 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
         } as Day0PhysicalConfig);
       }
       // Refresh
-      const res = await fetch("/api/day0/physical-config");
+      const res = await fetch(apiUrl("/api/day0/physical-config"));
       if (res.ok) {
         const data = await res.json();
         setConfig(data.data);

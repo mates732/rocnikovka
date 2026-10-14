@@ -472,3 +472,125 @@ test("D) network failures propagate as plain errors, not ApiError", async () => 
     restoreFetch();
   }
 });
+
+// ---------------------------------------------------------------------------
+// API connectivity / URL construction (Phase: production 404 diagnosis)
+// ---------------------------------------------------------------------------
+
+test("E) every HTTP service reads through the resolved apiUrl()", async () => {
+  const calls: string[] = [];
+  stubFetch((url) => {
+    calls.push(url);
+    return jsonResponse({ data: [] });
+  });
+  try {
+    await new HttpPlantService().listPlants();
+    await new HttpPlantService().getPlantById("PLT-001");
+    await new HttpPlantService().getDayContext("PLT-001");
+    await new HttpImageService().listImages();
+    await new HttpImageService().getImageById("IMG-1");
+    await new HttpMeasurementService().listManualMeasurements();
+    await new HttpMeasurementService().listAICVMeasurements();
+    await new HttpWaterService().listWaterEvents();
+    await new HttpPositionService().listPositionEvents();
+  } finally {
+    restoreFetch();
+  }
+
+  assert.deepEqual(calls, [
+    "/api/plants",
+    "/api/plants/PLT-001",
+    "/api/plants/PLT-001/day-context",
+    "/api/images",
+    "/api/images/IMG-1",
+    "/api/manual-measurements",
+    "/api/aicv-measurements",
+    "/api/water-events",
+    "/api/position-events",
+  ]);
+});
+
+test("F) every HTTP service writes through the resolved apiUrl()", async () => {
+  const calls: Array<{ url: string; method: string }> = [];
+  stubFetch((url, init) => {
+    calls.push({ url, method: String(init?.method ?? "GET") });
+    return jsonResponse({ data: waterInput });
+  });
+  try {
+    await new HttpPlantService().createPlant({
+      plant_id: "PLT-001",
+      pot_id: "POT-001",
+      group_name: "G1",
+      emergence_date: "2026-01-01",
+      status: "active",
+      created_at: "2026-01-01T08:00:00",
+    });
+    await new HttpWaterService().createWaterEvent(waterInput);
+    await new HttpPositionService().createPositionEvent(positionInput);
+  } finally {
+    restoreFetch();
+  }
+
+  assert.deepEqual(calls, [
+    { url: "/api/plants", method: "POST" },
+    { url: "/api/water-events", method: "POST" },
+    { url: "/api/position-events", method: "POST" },
+  ]);
+});
+
+test("G) a 404 from the API surfaces as ApiError and is never treated as empty success", async () => {
+  stubFetch(() => jsonResponse({ error: { code: "route.not_found", message: "Not found" } }, 404));
+  try {
+    await assert.rejects(
+      () => new HttpPlantService().listPlants(),
+      (error: unknown) => {
+        assert.ok(error instanceof ApiError, "404 must become an ApiError");
+        assert.equal((error as ApiError).status, 404);
+        return true;
+      }
+    );
+  } finally {
+    restoreFetch();
+  }
+});
+
+test("H) Day 0 services resolve through the same apiUrl() helper", async () => {
+  const calls: string[] = [];
+  stubFetch((url) => {
+    calls.push(url);
+    return jsonResponse({ data: [] });
+  });
+  try {
+    const { HttpDay0EquipmentService, HttpDay0PotAllocationService } = await import("./adapters.ts");
+    await new HttpDay0EquipmentService().list();
+    await new HttpDay0PotAllocationService().list();
+  } finally {
+    restoreFetch();
+  }
+
+  assert.deepEqual(calls, ["/api/day0/equipment", "/api/day0/pot-allocation"]);
+});
+
+test("I) image upload targets the multipart endpoint via apiUrl()", async () => {
+  const calls: string[] = [];
+  stubFetch((url, init) => {
+    calls.push(url);
+    assert.ok(init?.body instanceof FormData, "upload must send multipart FormData");
+    return jsonResponse({ data: {} });
+  });
+  try {
+    await new HttpImageService().uploadImage({
+      file: new File([new Uint8Array([1, 2, 3])], "frame.jpg", { type: "image/jpeg" }),
+      plant_id: "PLT-001",
+      timestamp: "2026-01-01T08:00:00",
+      experiment_day: 1,
+      camera_id: "CAM-01",
+      image_quality_status: "PASS",
+      calibration_status: "pass",
+    });
+  } finally {
+    restoreFetch();
+  }
+
+  assert.deepEqual(calls, ["/api/images/upload"]);
+});

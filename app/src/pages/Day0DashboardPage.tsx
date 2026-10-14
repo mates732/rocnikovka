@@ -5,6 +5,8 @@ import { StatusBadge } from "../components/StatusBadge";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorSummary } from "../components/ErrorSummary";
 import { services } from "../data/adapters";
+import { apiUrl } from "../data/apiBase";
+import { describeApiOrigin, hasExternalApiBase } from "../data/apiBase";
 import { DAY0_PLAN, plannedPotIds, detectPotConflicts } from "../data/day0Plan";
 import type { Day0EquipmentService } from "../services/interfaces";
 import type { Day0Equipment, Day0PhysicalConfig, Day0PotAllocation, Day0MethodologyDecision } from "../types/entities";
@@ -129,9 +131,9 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
       try {
         const [eq, pc, pa, md, pl] = await Promise.all([
           deps.day0EquipmentService.list(),
-          fetch("/api/day0/physical-config").then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => undefined),
-          fetch("/api/day0/pot-allocation").then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => []),
-          fetch("/api/day0/methodology-decisions").then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => []),
+          fetch(apiUrl("/api/day0/physical-config")).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => undefined),
+          fetch(apiUrl("/api/day0/pot-allocation")).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => []),
+          fetch(apiUrl("/api/day0/methodology-decisions")).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => []),
           deps.plantService.listPlants().catch(() => []),
         ]);
         if (!cancelled) {
@@ -193,7 +195,7 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
       if (needsEquipment) {
         for (const item of equipmentItems) {
           posts.push(
-            fetch("/api/day0/equipment", {
+            fetch(apiUrl("/api/day0/equipment"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(item),
@@ -204,7 +206,7 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
       if (needsDecisions) {
         for (const d of decisions) {
           posts.push(
-            fetch("/api/day0/methodology-decisions", {
+            fetch(apiUrl("/api/day0/methodology-decisions"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(d),
@@ -217,7 +219,7 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
       // Refresh
       const [eq, md] = await Promise.all([
         deps.day0EquipmentService.list(),
-        fetch("/api/day0/methodology-decisions").then((r) => r.json()).then((d) => d.data).catch(() => []),
+        fetch(apiUrl("/api/day0/methodology-decisions")).then((r) => r.json()).then((d) => d.data).catch(() => []),
       ]);
       setEquipment(eq);
       setMethodologyDecisions(md);
@@ -242,6 +244,10 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
         <div className="panel">
           <p className="empty-state-title">Nelze načíst data</p>
           <ErrorSummary error={error} fallbackMessage="Nepodařilo se načíst data přípravy experimentu" />
+          <p className="form-hint">
+            Požadavky směřují na: <code>{describeApiOrigin()}</code>
+            {!hasExternalApiBase && " — backend není nasazen na stejné doméně, proto požadavky vrací HTTP 404."}
+          </p>
         </div>
       </section>
     );
