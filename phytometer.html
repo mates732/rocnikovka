@@ -1,0 +1,2281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Phytometer — Plant Growth Measurement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   PHYTOMETER — DESIGN TOKENS
+   ============================================================ */
+:root{
+  --paper: #F4F2EA;
+  --paper-raised: #EFEDE3;
+  --ink: #1D211C;
+  --green: #365C3A;
+  --green-deep: #26401F;
+  --green-soft: #71846C;
+  --green-surface: #E7ECE2;
+  --border: #D7D5CC;
+  --border-soft: #E3E1D6;
+  --muted: #7B8076;
+  --error: #8C4A3B;
+  --warning: #A67C2E;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --sidebar-w: 240px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-display);
+  -webkit-font-smoothing:antialiased;
+  font-size:15px;
+  line-height:1.5;
+}
+::selection{ background:var(--green-surface); color:var(--green-deep); }
+
+a{ color:inherit; text-decoration:none; }
+button{ font-family:inherit; cursor:pointer; }
+
+.mono{ font-family:var(--font-mono); }
+.upx{ text-transform:uppercase; letter-spacing:.08em; }
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+.app{
+  display:flex;
+  min-height:100vh;
+  max-width:1440px;
+  margin:0 auto;
+  background:var(--paper);
+  border-left:1px solid var(--border-soft);
+  border-right:1px solid var(--border-soft);
+}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar{
+  width:var(--sidebar-w);
+  flex:0 0 var(--sidebar-w);
+  border-right:1px solid var(--border);
+  padding:28px 20px 24px;
+  display:flex;
+  flex-direction:column;
+  gap:34px;
+}
+.brand{ display:flex; flex-direction:column; gap:10px; padding:0 4px; }
+.brand-mark{
+  width:26px; height:26px;
+  display:flex; align-items:center; justify-content:center;
+}
+.brand-name{
+  font-size:16px; font-weight:600; letter-spacing:-.01em;
+}
+.brand-tag{
+  font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.09em;
+}
+
+.nav{ display:flex; flex-direction:column; gap:26px; flex:1; }
+.nav-group{ display:flex; flex-direction:column; gap:2px; }
+.nav-group-label{
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:.12em;
+  color:var(--muted);
+  padding:0 12px 8px;
+}
+.nav-item{
+  position:relative;
+  padding:8px 12px 8px 16px;
+  font-size:13.5px;
+  color:var(--ink);
+  border-left:2px solid transparent;
+  cursor:pointer;
+  transition:background-color .15s ease, border-color .15s ease;
+  border-radius:2px;
+}
+.nav-item:hover{ background:rgba(54,92,58,0.05); }
+.nav-item.active{
+  background:var(--green-surface);
+  border-left:2px solid var(--green);
+  font-weight:500;
+  color:var(--green-deep);
+}
+.sidebar-foot{
+  padding:12px 12px 0;
+  border-top:1px solid var(--border-soft);
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  color:var(--muted);
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+/* ---------- MAIN ---------- */
+.main{
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+.main-header{
+  padding:26px 48px 0;
+}
+.main-header-row{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  padding-bottom:18px;
+}
+.main-header-eyebrow{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+.main-header-title{
+  font-size:15px;
+  font-weight:500;
+}
+.protocol-chip{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:.06em;
+  color:var(--green-deep);
+}
+.protocol-dot{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--green);
+}
+.rule{ border:none; border-top:1px solid var(--border); margin:0; }
+
+.screen{ padding:0 48px 64px; display:none; }
+.screen.active{ display:block; }
+
+/* ============================================================
+   OVERVIEW
+   ============================================================ */
+.hero{
+  display:grid;
+  grid-template-columns:55fr 45fr;
+  gap:64px;
+  padding:56px 0 64px;
+  border-bottom:1px solid var(--border);
+}
+.hero-eyebrow{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  letter-spacing:.1em;
+  color:var(--green);
+  margin-bottom:22px;
+}
+.hero-title{
+  font-size:56px;
+  line-height:1.02;
+  font-weight:600;
+  letter-spacing:-.02em;
+  margin:0 0 22px;
+  max-width:9.5ch;
+}
+.hero-desc{
+  font-size:16px;
+  color:#3A3F38;
+  max-width:46ch;
+  margin:0 0 36px;
+}
+.hero-meta{
+  display:flex;
+  gap:40px;
+  padding-top:24px;
+  border-top:1px solid var(--border);
+  flex-wrap:wrap;
+}
+.meta-item{ display:flex; flex-direction:column; gap:6px; }
+.meta-label{
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:.1em;
+  color:var(--muted);
+}
+.meta-value{ font-size:14px; font-weight:500; }
+.meta-value.mono{ font-size:13.5px; }
+
+.specimen-frame{
+  position:relative;
+  aspect-ratio:4/3;
+  border:1px solid var(--border);
+  background:
+    linear-gradient(180deg, var(--paper-raised), var(--paper));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.specimen-frame::before{
+  content:"";
+  position:absolute; inset:14px;
+  border:1px solid var(--border);
+}
+.frame-tag{
+  position:absolute;
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:.08em;
+  color:var(--muted);
+}
+.frame-tag.tl{ top:26px; left:26px; }
+.frame-tag.tr{ top:26px; right:26px; text-align:right; }
+.frame-tag.bl{ bottom:26px; left:26px; }
+.frame-tag.br{ bottom:26px; right:26px; }
+.frame-empty-icon{
+  width:34px; height:34px;
+  opacity:.55;
+}
+.frame-empty-text{
+  text-align:center;
+  max-width:26ch;
+}
+.frame-empty-title{
+  font-size:14px;
+  font-weight:600;
+  margin:14px 0 6px;
+  letter-spacing:.02em;
+}
+.frame-empty-sub{
+  font-size:12.5px;
+  color:var(--muted);
+  line-height:1.5;
+}
+.frame-img{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:cover;
+}
+.frame-img::after{
+  content:""; position:absolute; inset:0;
+  box-shadow:inset 0 0 0 1px rgba(244,242,234,.25);
+}
+.frame-veg{ position:absolute; inset:0; pointer-events:none; }
+
+/* ---- experiment record sequence ---- */
+.section-title{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:.1em;
+  color:var(--muted);
+  padding:44px 0 28px;
+}
+.sequence{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  position:relative;
+  padding-bottom:56px;
+  border-bottom:1px solid var(--border);
+}
+.sequence::before{
+  content:"";
+  position:absolute;
+  top:11px; left:0; right:0;
+  height:1px;
+  background:var(--border);
+}
+.seq-item{ position:relative; padding-right:20px; }
+.seq-num{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--green);
+  background:var(--paper);
+  display:inline-block;
+  padding-right:8px;
+  position:relative;
+  z-index:1;
+}
+.seq-title{
+  font-size:14.5px;
+  font-weight:600;
+  margin:16px 0 6px;
+}
+.seq-desc{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.5;
+  max-width:22ch;
+}
+
+/* ---- latest evidence ---- */
+.evidence-grid{
+  display:grid;
+  grid-template-columns:1.15fr 1fr;
+  gap:56px;
+  padding:44px 0 8px;
+}
+.evidence-col-label{
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:18px;
+}
+.filmstrip{
+  display:flex;
+  gap:14px;
+  overflow-x:auto;
+  padding-bottom:6px;
+}
+.film-frame{
+  flex:0 0 150px;
+  aspect-ratio:3/4;
+  border:1px solid var(--border);
+  background:var(--paper-raised);
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  padding:10px;
+  transition:border-color .15s ease;
+}
+.film-frame:hover{ border-color:var(--green-soft); }
+.film-frame .lbl{
+  font-family:var(--font-mono);
+  font-size:9.5px;
+  color:var(--muted);
+  line-height:1.6;
+}
+.journal{ display:flex; flex-direction:column; }
+.journal-row{
+  display:grid;
+  grid-template-columns:56px 40px 1fr auto;
+  align-items:baseline;
+  gap:16px;
+  padding:13px 0;
+  border-bottom:1px solid var(--border-soft);
+  font-size:13.5px;
+}
+.journal-row .day{ font-family:var(--font-mono); color:var(--muted); font-size:11.5px; }
+.journal-row .rep{ font-family:var(--font-mono); font-size:11.5px; }
+.journal-row .val{ font-family:var(--font-mono); font-weight:500; }
+.tag-pass{ font-family:var(--font-mono); font-size:11px; color:var(--green); }
+.tag-warn{ font-family:var(--font-mono); font-size:11px; color:var(--warning); }
+.tag-fail{ font-family:var(--font-mono); font-size:11px; color:var(--error); }
+.tag-missing{ font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+
+/* ============================================================
+   TABLES (Specimen Register / Manual Reference)
+   ============================================================ */
+.page-head{ padding:40px 0 6px; }
+.page-title{ font-size:48px; font-weight:600; letter-spacing:-.025em; line-height:1.0; margin:0 0 14px; }
+.page-desc{ font-size:14px; color:var(--muted); max-width:52ch; margin:0; }
+.row-index{ font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-right:10px; }
+
+.table{ width:100%; border-collapse:collapse; }
+.table thead th{
+  text-align:left;
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  letter-spacing:.08em;
+  color:var(--muted);
+  font-weight:500;
+  padding:0 16px 14px 0;
+  border-bottom:1px solid var(--border);
+}
+.table tbody td{
+  padding:18px 16px 18px 0;
+  border-bottom:1px solid var(--border-soft);
+  font-size:13.5px;
+  vertical-align:middle;
+}
+.table tbody tr{ cursor:pointer; transition:background-color .12s ease; }
+.table tbody tr:hover{ background:rgba(54,92,58,0.035); }
+.cell-id{ font-family:var(--font-mono); font-weight:600; }
+.cell-sub{ display:block; font-size:12px; color:var(--muted); margin-top:2px; font-style:italic; }
+.status-dot{ display:inline-flex; align-items:center; gap:7px; font-size:13px; }
+.status-dot::before{ content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+.mono-cell{ font-family:var(--font-mono); font-size:13px; }
+.verdict-pass{ font-family:var(--font-mono); font-size:12.5px; color:var(--green); }
+.verdict-warn{ font-family:var(--font-mono); font-size:12.5px; color:var(--warning); }
+
+/* ============================================================
+   PLANT DETAIL
+   ============================================================ */
+.detail-hero{ padding:44px 0 28px; border-bottom:1px solid var(--border); }
+.detail-eyebrow{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--green); margin-bottom:10px; }
+.detail-title{ font-size:42px; font-weight:600; letter-spacing:-.015em; margin:0 0 6px; }
+.detail-sub{ font-size:17px; color:var(--green-soft); font-style:italic; margin:0 0 26px; }
+.detail-meta{ display:flex; gap:32px; flex-wrap:wrap; }
+.detail-meta .m-item{ font-family:var(--font-mono); font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+.detail-meta .m-item b{ color:var(--ink); font-weight:500; }
+
+.record-counts{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  padding:32px 0;
+  border-bottom:1px solid var(--border);
+}
+.rc-item{ padding-right:16px; border-left:1px solid var(--border); padding-left:20px; }
+.rc-item:first-child{ border-left:none; padding-left:0; }
+.rc-num{ font-family:var(--font-mono); font-size:26px; font-weight:600; }
+.rc-label{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; color:var(--muted); margin-top:6px; }
+
+.timeline{ padding:44px 0 8px; position:relative; }
+.timeline-day{ display:grid; grid-template-columns:110px 1fr; gap:28px; position:relative; }
+.timeline-rail{
+  position:relative;
+  display:flex; justify-content:center;
+}
+.timeline-rail::before{
+  content:"";
+  position:absolute;
+  top:6px; bottom:-38px;
+  width:1px;
+  background:var(--border);
+}
+.timeline-day:last-child .timeline-rail::before{ display:none; }
+.timeline-num{ font-family:var(--font-mono); font-size:22px; font-weight:600; z-index:1; background:var(--paper); padding-bottom:4px; }
+.timeline-body{ padding-bottom:38px; }
+.timeline-date{ font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-bottom:12px; }
+.timeline-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.tchip{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:.03em;
+  padding:6px 11px;
+  border:1px solid var(--border);
+  color:var(--green-deep);
+  background:var(--green-surface);
+}
+.tchip .n{ color:var(--muted); margin-left:5px; }
+
+/* ============================================================
+   IMAGE EVIDENCE
+   ============================================================ */
+.image-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:var(--border);
+  margin-top:34px;
+  border:1px solid var(--border);
+}
+.image-card{
+  background:var(--paper);
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.image-plate{
+  aspect-ratio:4/3;
+  background:var(--paper-raised);
+  border:1px solid var(--border);
+  position:relative;
+  display:flex; align-items:flex-start; justify-content:space-between;
+  padding:10px;
+  overflow:hidden;
+}
+.image-plate .lbl{ font-family:var(--font-mono); font-size:9px; color:var(--muted); }
+.image-info{ display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; }
+.image-info .k{ color:var(--muted); }
+
+/* ============================================================
+   VERIFICATION
+   ============================================================ */
+.verif-top{ display:flex; align-items:flex-end; justify-content:space-between; gap:40px; padding:40px 0 34px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.day-select-label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.09em; color:var(--muted); margin-bottom:10px; }
+.day-select{
+  display:flex; align-items:center; gap:14px;
+  font-family:var(--font-mono);
+  font-size:34px; font-weight:600;
+}
+.day-select button{
+  width:30px; height:30px;
+  border:1px solid var(--border);
+  background:transparent;
+  font-family:var(--font-mono);
+  font-size:14px;
+  color:var(--muted);
+  line-height:1;
+}
+.day-select button:hover{ border-color:var(--green); color:var(--green); }
+.verif-stats{ display:flex; gap:48px; }
+.vstat{ text-align:right; }
+.vstat-num{ font-family:var(--font-mono); font-size:26px; font-weight:600; }
+.vstat-label{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; color:var(--muted); margin-top:6px; }
+.vstat.attn .vstat-num{ color:var(--warning); }
+.vstat.fail .vstat-num{ color:var(--error); }
+
+.inspect-table{ width:100%; border-collapse:collapse; margin-top:8px; }
+.inspect-table th{
+  text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; color:var(--muted);
+  font-weight:500; padding:16px 14px; border-bottom:1px solid var(--border);
+}
+.inspect-table th:not(:first-child){ text-align:center; }
+.inspect-table td{
+  padding:16px 14px; border-bottom:1px solid var(--border-soft); font-size:13.5px;
+}
+.inspect-table td:not(:first-child){ text-align:center; font-family:var(--font-mono); font-size:13px; }
+.sym-pass{ color:var(--green); }
+.sym-warn{ color:var(--warning); }
+.sym-fail{ color:var(--error); }
+.sym-missing{ color:var(--muted); }
+.sym-na{ color:var(--border); }
+
+/* ============================================================
+   REFERENCE-INSPIRED ADDITIONS
+   (huge tight display type, dot-accented section titles,
+    breakout specimen frame with crop-mark/crosshair annotations,
+    expertise-style evidence cards, laboratory-journal rows)
+   ============================================================ */
+
+/* dot accent after a section title / heading, e.g. "EXPERTISE ." */
+.dot-accent{
+  display:inline-block;
+  width:6px; height:6px;
+  border-radius:50%;
+  background:var(--green);
+  margin-left:8px;
+  vertical-align:middle;
+}
+
+/* oversized tight display headline */
+.hero-title{
+  font-size:76px;
+  line-height:0.94;
+  letter-spacing:-.03em;
+  max-width:11ch;
+}
+
+/* breakout specimen frame — bleeds upward out of the grid row.
+   Corner crop-marks + a faint crosshair evoke a calibrated
+   scientific imaging instrument, not a decorative call-out. */
+.specimen-frame{
+  margin-top:-34px;
+}
+.crop-mark{
+  position:absolute;
+  width:16px; height:16px;
+  border:1px solid var(--muted);
+  opacity:.55;
+  z-index:3;
+}
+.crop-mark.tl{ top:14px; left:14px; border-right:none; border-bottom:none; }
+.crop-mark.tr{ top:14px; right:14px; border-left:none; border-bottom:none; }
+.crop-mark.bl{ bottom:14px; left:14px; border-right:none; border-top:none; }
+.crop-mark.br{ bottom:14px; right:14px; border-left:none; border-top:none; }
+.crosshair-h,.crosshair-v{
+  position:absolute;
+  background:var(--paper);
+  opacity:.8;
+  z-index:3;
+}
+.crosshair-h{ top:50%; left:50%; width:18px; height:1px; transform:translate(-50%,-50%); }
+.crosshair-v{ top:50%; left:50%; width:1px; height:18px; transform:translate(-50%,-50%); }
+
+/* expertise-style evidence cards: image left, label right */
+.evidence-cards{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+.ev-card{
+  display:flex;
+  align-items:stretch;
+  border:1px solid var(--border);
+  background:var(--paper-raised);
+  min-height:104px;
+}
+.ev-card-thumb{
+  flex:0 0 104px;
+  background:
+    repeating-linear-gradient(135deg, var(--green-surface) 0 2px, transparent 2px 10px),
+    var(--green-surface);
+  position:relative;
+  border-right:1px solid var(--border);
+  overflow:hidden;
+}
+.ev-card-thumb .lbl{
+  position:absolute; bottom:8px; left:8px;
+  font-family:var(--font-mono);
+  font-size:8.5px;
+  color:var(--green-deep);
+  letter-spacing:.05em;
+  z-index:2;
+}
+.ev-card-thumb img{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  object-fit:cover;
+  display:block;
+}
+.ev-card-body{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:14px 18px;
+  gap:4px;
+}
+.ev-card-title{ font-size:16px; font-weight:600; }
+.ev-card-sub{ font-family:var(--font-mono); font-size:10.5px; color:var(--muted); letter-spacing:.04em; }
+
+/* methodology-style rows: dot bullet + label + thin divider + faint thumb */
+.method-list{ display:flex; flex-direction:column; }
+.method-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:16px 0;
+  border-bottom:1px solid var(--border-soft);
+}
+.method-row:first-child{ border-top:1px solid var(--border-soft); }
+.method-dot{
+  width:6px; height:6px; border-radius:50%;
+  background:var(--green);
+  flex:0 0 auto;
+}
+.method-label{ flex:1; font-size:14.5px; }
+.method-label .s{ display:block; font-family:var(--font-mono); font-size:9.5px; color:var(--muted); letter-spacing:.06em; margin-bottom:3px; }
+.method-meta{ font-family:var(--font-mono); font-size:11.5px; color:var(--muted); flex:0 0 auto; }
+.method-thumb{
+  width:34px; height:34px;
+  background:var(--green-surface);
+  border:1px solid var(--border);
+  flex:0 0 auto;
+}
+
+/* slash-separated micro line, echoing the reference's "Technology / Product / ..." nav */
+.slash-line{
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  color:var(--muted);
+  letter-spacing:.04em;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:baseline;
+}
+.slash-line b{ color:var(--green-deep); font-weight:600; }
+.slash-line span.sl-sep{ color:var(--border); }
+
+/* large-value measurement register rows (Manual Reference) */
+.measure-list{ margin-top:8px; }
+.measure-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:28px;
+  padding:24px 0;
+  border-bottom:1px solid var(--border-soft);
+}
+.measure-row:first-child{ border-top:1px solid var(--border); }
+.measure-value{
+  font-family:var(--font-mono);
+  font-size:34px;
+  font-weight:600;
+  letter-spacing:-.01em;
+  flex:0 0 auto;
+  min-width:130px;
+}
+.measure-value .u{ font-size:14px; color:var(--muted); font-weight:500; margin-left:3px; }
+.measure-meta{ flex:1; font-size:12px; }
+.measure-verdict{ font-family:var(--font-mono); font-size:12.5px; flex:0 0 auto; text-align:right; min-width:80px; }
+
+/* image evidence technical annotation line */
+.image-info-main{ font-size:11.5px; }
+.image-info-main b{ color:var(--ink); }
+.image-info-sub{
+  font-family:var(--font-mono);
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:.03em;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+/* ============================================================
+   PHYTOMETER — FUNCTIONAL LAYER (buttons, forms, modals, …)
+   ============================================================ */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  padding:10px 16px;
+  border:1px solid var(--border); background:transparent; color:var(--ink);
+  cursor:pointer;
+  transition:border-color .15s ease, background-color .15s ease, color .15s ease;
+}
+.btn:hover{ border-color:var(--green); color:var(--green-deep); }
+.btn:focus-visible{ outline:1px solid var(--green); outline-offset:2px; }
+.btn-primary{ background:var(--green-deep); border-color:var(--green-deep); color:var(--paper); }
+.btn-primary:hover{ background:var(--green); border-color:var(--green); color:var(--paper); }
+.btn-danger{ color:var(--error); border-color:var(--error); }
+.btn-danger:hover{ border-color:var(--error); color:var(--error); background:rgba(140,74,59,.05); }
+.btn-sm{ padding:6px 10px; font-size:10px; }
+.page-head-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+.page-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.nav-toggle{ display:none; }
+
+.stats-band{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); margin-top:34px; border-top:1px solid var(--border); }
+.sb-item{ padding:20px 22px 18px 0; border-left:1px solid var(--border); padding-left:22px; }
+.sb-item:first-child{ border-left:none; padding-left:0; }
+.sb-num{ font-family:var(--font-mono); font-size:24px; font-weight:600; letter-spacing:-.01em; }
+.sb-num .u{ font-size:13px; color:var(--muted); font-weight:500; margin-left:2px; }
+.sb-label{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; color:var(--muted); margin-top:5px; }
+
+.void{ border:1px dashed var(--border); padding:64px 24px; text-align:center; margin-top:34px; }
+.void-icon{ opacity:.5; }
+.void-title{ font-family:var(--font-mono); font-size:12px; letter-spacing:.12em; color:var(--muted); margin:16px 0 8px; }
+.void-sub{ font-size:13px; color:var(--muted); max-width:46ch; margin:0 auto; line-height:1.6; }
+.subnote{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; color:var(--muted); }
+
+.legend{ display:flex; flex-wrap:wrap; gap:20px; padding:20px 0 6px; font-family:var(--font-mono); font-size:10.5px; color:var(--muted); letter-spacing:.03em; align-items:center; }
+.legend .li{ display:inline-flex; align-items:center; gap:7px; }
+.legend .sym{ font-size:12px; }
+
+.table-scroll{ overflow-x:auto; margin-top:32px; }
+.table-scroll .table{ margin-top:0; }
+
+.micro-cap{ font-family:var(--font-mono); font-size:8.5px; letter-spacing:.08em; color:var(--muted); display:block; margin-top:2px; }
+.plate-tag{ position:absolute; z-index:2; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; color:var(--ink); background:rgba(244,242,234,.85); padding:2px 6px; top:6px; left:6px; }
+.plate-tag.br{ left:auto; right:6px; }
+.plate-img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.specimen-frame .frame-tag{ background:rgba(244,242,234,.78); padding:2px 6px; border:1px solid rgba(215,213,204,.6); }
+.image-plate.has-img{ padding:0; }
+.image-plate.has-img .frame-tag{ z-index:2; }
+.overlay-img-tag{ position:absolute; z-index:2; }
+
+/* register / journal style list rows for water & positions */
+.row-list{ border-top:1px solid var(--border); margin-top:30px; }
+.kv-row{
+  display:grid;
+  grid-template-columns:64px 120px 1fr auto;
+  gap:18px;
+  align-items:baseline;
+  padding:17px 0;
+  border-bottom:1px solid var(--border-soft);
+  font-size:13.5px;
+}
+.kv-row .k{ font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+.kv-row .v{ font-family:var(--font-mono); font-weight:500; }
+.kv-row .meta{ font-size:12.5px; color:var(--muted); }
+.kv-row .val{ font-family:var(--font-mono); font-weight:500; white-space:nowrap; }
+
+/* quality control list */
+.qc-list{ border-top:1px solid var(--border); margin-top:30px; }
+.qc-row{
+  display:grid;
+  grid-template-columns:150px 120px 1fr auto;
+  gap:18px;
+  align-items:baseline;
+  padding:16px 0;
+  border-bottom:1px solid var(--border-soft);
+  font-size:13.5px;
+}
+.qc-row .check{ font-size:13.5px; font-weight:500; }
+.qc-row .subj{ font-family:var(--font-mono); font-size:11.5px; color:var(--muted); }
+.qc-row .detail{ font-size:12.5px; color:var(--muted); }
+.qc-row .st{ font-family:var(--font-mono); font-size:11.5px; text-align:right; white-space:nowrap; }
+
+/* protocol page */
+.proto-block{ padding:6px 0 10px; }
+.proto-head{ display:flex; align-items:center; justify-content:space-between; gap:24px; padding:44px 0 30px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.proto-title{ font-size:44px; font-weight:600; letter-spacing:-.025em; line-height:1.0; margin:0 0 10px; }
+.proto-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:22px; }
+.proto-sec{ padding:26px 0; border-bottom:1px solid var(--border-soft); display:grid; grid-template-columns:260px 1fr; gap:32px; }
+.proto-sec:last-child{ border-bottom:none; }
+.proto-sec h3{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; color:var(--muted); font-weight:500; margin:2px 0 0; }
+.proto-sec .body{ font-size:13.5px; max-width:72ch; line-height:1.65; }
+.proto-sec .body p{ margin:0 0 10px; }
+.proto-sec .body ul{ margin:0; padding-left:18px; }
+.proto-sec .body li{ margin-bottom:5px; }
+
+/* analysis chart */
+.chart-wrap{ border-top:1px solid var(--border); margin-top:34px; padding-top:26px; }
+.chart-wrap svg{ width:100%; height:auto; display:block; }
+.chart-cap{ font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; color:var(--muted); margin-top:8px; }
+
+/* settings form on page */
+.set-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; margin-top:34px; }
+.set-grid .full{ grid-column:1/-1; }
+
+/* forms */
+.form{ display:flex; flex-direction:column; gap:16px; }
+.form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; }
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field.full{ grid-column:1/-1; }
+.field label{ font-family:var(--font-mono); font-size:10px; letter-spacing:.09em; color:var(--muted); text-transform:uppercase; }
+.field .req{ color:var(--error); }
+.field input,.field select,.field textarea{
+  font-family:var(--font-display); font-size:14px; color:var(--ink);
+  background:var(--paper); border:1px solid var(--border);
+  padding:10px 12px; border-radius:0;
+}
+.field input:focus,.field select:focus,.field textarea:focus{ outline:none; border-color:var(--green); }
+.field textarea{ resize:vertical; min-height:60px; line-height:1.5; }
+.field .hint{ font-size:11px; color:var(--muted); }
+.field input[type=file]{ font-family:var(--font-mono); font-size:12px; padding:9px 0; border:none; }
+.form-error{ font-family:var(--font-mono); font-size:11.5px; color:var(--error); letter-spacing:.02em; margin:0; line-height:1.5; }
+.preview-plate{ aspect-ratio:4/3; border:1px solid var(--border); background:var(--paper-raised); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+.preview-plate img{ width:100%; height:100%; object-fit:cover; display:block; }
+.preview-plate .ph{ font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; color:var(--muted); }
+
+/* overlay / modal */
+body.modal-open{ overflow:hidden; }
+.overlay{
+  display:none;
+  position:fixed; inset:0; z-index:80;
+  background:rgba(29,33,28,.42);
+  align-items:flex-start; justify-content:center;
+  padding:8vh 20px 40px;
+  overflow-y:auto;
+}
+.overlay.open{ display:flex; }
+.modal{
+  background:var(--paper);
+  border:1px solid var(--border);
+  max-width:660px; width:100%;
+  padding:30px 32px 26px;
+  box-shadow:0 30px 80px -40px rgba(29,33,28,.5);
+}
+.modal-eyebrow{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; color:var(--green); margin-bottom:8px; }
+.modal-title{ font-size:24px; font-weight:600; letter-spacing:-.01em; margin:0 0 6px; }
+.modal-sub{ font-size:12.5px; color:var(--muted); margin:0 0 22px; }
+.modal-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:8px; padding-top:18px; border-top:1px solid var(--border-soft); }
+
+/* ============================================================
+   RESPONSIVE (ORIGINAL)
+   ============================================================ */
+@media (max-width:1180px){
+  .hero{ grid-template-columns:1fr; }
+  .hero-title{ font-size:58px; }
+  .specimen-frame{ margin-top:0; }
+  .evidence-grid{ grid-template-columns:1fr; }
+  .evidence-cards{ grid-template-columns:1fr; }
+  .record-counts{ grid-template-columns:repeat(3,1fr); row-gap:20px; }
+  .image-grid{ grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:900px){
+  .app{ flex-direction:column; }
+  .sidebar{
+    width:100%; flex:none; flex-direction:row; align-items:center;
+    gap:20px; padding:14px 20px; overflow-x:auto; border-right:none; border-bottom:1px solid var(--border);
+  }
+  .nav{ flex-direction:row; gap:14px; flex:none; }
+  .nav-group{ flex-direction:row; gap:4px; }
+  .nav-group-label{ display:none; }
+  .nav-item{ white-space:nowrap; border-left:none; border-bottom:2px solid transparent; }
+  .nav-item.active{ border-left:none; border-bottom:2px solid var(--green); }
+  .sidebar-foot{ display:none; }
+  .main-header,.screen{ padding-left:24px; padding-right:24px; }
+  .sequence{ grid-template-columns:repeat(3,1fr); row-gap:28px; }
+  .sequence::before{ display:none; }
+}
+
+/* ============================================================
+   RESPONSIVE — COMPACT TOP NAVIGATION (replaces the strip above
+   at ≤900px: grouped panel behind a MENU toggle, no endless row)
+   ============================================================ */
+@media (max-width:900px){
+  .sidebar{ position:relative; flex-direction:column; align-items:stretch; gap:12px; overflow:visible; padding:14px 20px; }
+  .brand{ flex-direction:row; align-items:center; gap:10px; width:100%; padding:0; }
+  .brand .brand-text{ flex:1; }
+  .nav-toggle{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.12em;
+    color:var(--muted); background:transparent; border:1px solid var(--border);
+    padding:9px 12px;
+  }
+  .nav-toggle:hover{ border-color:var(--green); color:var(--green-deep); }
+  .sidebar .nav{
+    position:absolute; top:calc(100% - 1px); left:0; right:0;
+    display:none; flex-direction:column; gap:20px; flex:none;
+    background:var(--paper);
+    border-bottom:1px solid var(--border);
+    border-top:1px solid var(--border);
+    padding:18px 20px 24px;
+    z-index:70;
+    max-height:calc(100vh - 64px);
+    overflow-y:auto;
+    box-shadow:0 30px 60px -42px rgba(29,33,28,.45);
+  }
+  .sidebar.open .nav{ display:flex; }
+  .nav-group{ flex-direction:column; gap:2px; }
+  .nav-group-label{ display:block; padding-left:12px; }
+  .nav-item{ white-space:normal; border-left:2px solid transparent; border-bottom:none; }
+  .nav-item.active{ border-left-color:var(--green); border-bottom:none; }
+  .hero-title{ font-size:46px; }
+  .proto-sec{ grid-template-columns:1fr; gap:10px; }
+  .form-grid,.set-grid{ grid-template-columns:1fr; }
+  .stats-band{ grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:640px){
+  .main-header,.screen{ padding-left:18px; padding-right:18px; }
+  .page-title{ font-size:34px; }
+  .hero-title{ font-size:34px; }
+  .hero-desc{ font-size:14.5px; }
+  .record-counts{ grid-template-columns:repeat(2,1fr); }
+  .image-grid{ grid-template-columns:1fr; }
+  .modal{ padding:22px 18px; }
+  .measure-value{ font-size:26px; min-width:0; }
+  .measure-row{ flex-wrap:wrap; gap:10px; }
+  .verif-stats{ gap:24px; }
+  .kv-row{ grid-template-columns:48px 1fr auto; }
+  .kv-row .k{ display:none; }
+  .qc-row{ grid-template-columns:1fr auto; gap:6px 14px; }
+  .qc-row .subj{ grid-column:1; }
+  .qc-row .detail{ grid-column:1/-1; }
+  .qc-row .st{ grid-column:2; grid-row:1; }
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{ transition:none !important; animation:none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============================================================
+       SIDEBAR
+       ============================================================ -->
+  <nav class="sidebar" id="appSidebar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="#365C3A" stroke-width="1.3"/>
+          <path d="M12 21V8" stroke="#365C3A" stroke-width="1.3"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">Phytometer</div>
+        <div class="brand-tag">Plant growth measurement</div>
+      </div>
+      <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="appNav">MENU</button>
+    </div>
+
+    <div class="nav" id="appNav">
+      <div class="nav-group">
+        <div class="nav-group-label">GROUP 01 — WORKSPACE</div>
+        <div class="nav-item" data-screen="overview" tabindex="0">Overview</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">GROUP 02 — COLLECTION</div>
+        <div class="nav-item" data-screen="plants" tabindex="0">Plants</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">GROUP 03 — DAILY RECORDS</div>
+        <div class="nav-item" data-screen="images" tabindex="0">Images</div>
+        <div class="nav-item" data-screen="measurements" tabindex="0">Measurements</div>
+        <div class="nav-item" data-screen="water" tabindex="0">Water</div>
+        <div class="nav-item" data-screen="positions" tabindex="0">Positions</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">GROUP 04 — REVIEW</div>
+        <div class="nav-item" data-screen="verification" tabindex="0">Verification</div>
+        <div class="nav-item" data-screen="quality" tabindex="0">Quality control</div>
+        <div class="nav-item" data-screen="protocol" tabindex="0">Protocol</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">GROUP 05 — SYSTEM</div>
+        <div class="nav-item" data-screen="analysis" tabindex="0">Analysis</div>
+        <div class="nav-item" data-screen="validation" tabindex="0">Validation</div>
+        <div class="nav-item" data-screen="settings" tabindex="0">Settings</div>
+      </div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div>PROTOCOL V1</div>
+      <div>SPECIES · PHASEOLUS VULGARIS</div>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+  <div class="main">
+    <div class="main-header">
+      <div class="main-header-row">
+        <div>
+          <div class="main-header-eyebrow">EXPERIMENT</div>
+          <div class="main-header-title">Automated plant growth measurement</div>
+        </div>
+        <div class="protocol-chip"><span class="protocol-dot"></span>PROTOCOL V1 · LOCKED</div>
+      </div>
+      <hr class="rule" />
+    </div>
+
+    <section class="screen" id="screen-overview" aria-label="Overview"></section>
+    <section class="screen" id="screen-plants" aria-label="Specimen register"></section>
+    <section class="screen" id="screen-plant-detail" aria-label="Specimen record"></section>
+    <section class="screen" id="screen-images" aria-label="Image evidence"></section>
+    <section class="screen" id="screen-measurements" aria-label="Manual reference"></section>
+    <section class="screen" id="screen-water" aria-label="Water"></section>
+    <section class="screen" id="screen-positions" aria-label="Positions"></section>
+    <section class="screen" id="screen-verification" aria-label="Experiment verification"></section>
+    <section class="screen" id="screen-quality" aria-label="Quality control"></section>
+    <section class="screen" id="screen-protocol" aria-label="Protocol"></section>
+    <section class="screen" id="screen-analysis" aria-label="Analysis"></section>
+    <section class="screen" id="screen-validation" aria-label="Validation"></section>
+    <section class="screen" id="screen-settings" aria-label="Settings"></section>
+  </div>
+</div>
+
+<!-- modal host -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true"></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   00 · SMALL HELPERS
+   ============================================================ */
+const $=(sel,root)=> (root||document).querySelector(sel);
+const $$=(sel,root)=> Array.from((root||document).querySelectorAll(sel));
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad2=n=>String(n).padStart(2,'0');
+const DAY2=n=>String(Math.max(0,n)).padStart(2,'0');
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function toISO(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function nowISO(){ return new Date().toISOString(); }
+function todayISO(){ return toISO(new Date()); }
+function numOr(v){ const n=parseFloat(v); return isFinite(n)?n:null; }
+function fmtDate(v){ if(!v) return '—'; const p=String(v).split('-'); const d=+p[2],m=+p[1]; if(!d||!m||p.length<3) return '—'; return d+' '+MONTHS[m-1]+' '+p[0]; }
+function fmtTS(v){ if(!v) return '—'; const d=new Date(v); if(isNaN(d.getTime())) return '—'; return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+' · '+pad2(d.getHours())+':'+pad2(d.getMinutes()); }
+function fmtDay(d){ return DAY2(d); }
+
+/* display unit conversion — values are ALWAYS stored in cm */
+function unitLabel(){ return (DB.settings.unit==='mm')?'mm':'cm'; }
+function dispVal(cm){ const u=DB.settings.unit; return (u==='mm')?+(cm*10).toFixed(1):+(+cm).toFixed(1); }
+function dispValStr(cm){ return String(dispVal(cm)); }
+function inputToCm(v){ const n=numOr(v); if(n==null) return null; return (DB.settings.unit==='mm')?+(n/10).toFixed(2):n; }
+
+/* ============================================================
+   01 · STORAGE LAYER  (localStorage with in-memory fallback)
+   ============================================================ */
+const KEYS={
+  plants:'phytometer_plants',
+  images:'phytometer_images',
+  measurements:'phytometer_measurements',
+  water:'phytometer_water',
+  positions:'phytometer_positions',
+  aicv:'phytometer_aicv',
+  settings:'phytometer_settings',
+  seeded:'phytometer_seeded_v1'
+};
+const memStore={};
+let LS_OK=true;
+function lsGet(k){ try{ const v=localStorage.getItem(k); return v; }catch(e){ LS_OK=false; return (k in memStore)?memStore[k]:null; } }
+function lsSet(k,v){ if(LS_OK){ try{ localStorage.setItem(k,v); return; }catch(e){ LS_OK=false; } } memStore[k]=v; }
+function lsDel(k){ if(LS_OK){ try{ localStorage.removeItem(k); }catch(e){} } delete memStore[k]; }
+function readJson(k){ try{ const raw=lsGet(k); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+
+let DB=null;
+
+function defaultSettings(){
+  return { protocolVersion:'v1', unit:'cm', defaultDay:7, diffThresholdCm:1.0, aicvEnabled:true };
+}
+
+/* -------- seed demo state (first run / reset) -------- */
+function seedState(){
+  const dISO=day=>{ const dt=new Date(2026,7,9+day,8,30,0); return toISO(dt); };
+  const ts=(day,h)=>dISO(day)+'T'+(h||'08:30')+':00';
+  const plants=[
+    { id:'PLT-001', species:'Phaseolus vulgaris', group:'G1', pot:'P-04', status:'active', emerged:'2026-08-12', registered:'2026-08-10', note:'' },
+    { id:'PLT-002', species:'Phaseolus vulgaris', group:'G1', pot:'P-05', status:'active', emerged:'2026-08-13', registered:'2026-08-10', note:'' },
+    { id:'PLT-003', species:'Phaseolus vulgaris', group:'G2', pot:'P-06', status:'active', emerged:'2026-08-11', registered:'2026-08-10', note:'' },
+    { id:'PLT-004', species:'Phaseolus vulgaris', group:'G2', pot:'P-07', status:'pending', emerged:'', registered:'2026-08-10', note:'Awaiting emergence.' }
+  ];
+  const M=(id,plantId,day,rep,attempt,valueCm,note)=>({ id:('MSR-'+id), plantId, day, rep, attempt, valueCm, note:note||'', ts:ts(day) });
+  const measurements=[
+    M('001','PLT-001',6,1,1,17.2), M('002','PLT-001',6,2,1,17.0),
+    M('003','PLT-001',7,1,1,18.4), M('004','PLT-001',7,2,1,18.1),
+    M('005','PLT-002',6,1,1,14.8), M('006','PLT-002',6,2,1,14.6),
+    M('007','PLT-002',7,1,1,15.9), M('008','PLT-002',7,2,2,16.0,'Retake after read-out doubt.'),
+    M('009','PLT-003',6,1,1,13.1), M('010','PLT-003',6,2,1,13.0),
+    M('011','PLT-003',7,1,1,14.2)
+  ];
+  const I=(id,plantId,day,quality,calibration)=>({ id:('IMG-'+id), plantId, day, quality, calibration, dataUrl:'', note:'', ts:ts(day,'09:10') });
+  const images=[
+    I('001','PLT-003',4,'low','retake'),
+    I('002','PLT-002',5,'good','valid'),
+    I('003','PLT-001',6,'good','valid'),
+    I('004','PLT-001',7,'good','valid')
+  ];
+  const W=(id,plantId,day,amount)=>({ id:('WTR-'+id), plantId, day, amount, unit:'ml', ts:ts(day,'07:45'), note:'' });
+  const water=[
+    W('001','PLT-001',1,100), W('002','PLT-001',3,120), W('003','PLT-001',5,100), W('004','PLT-001',7,120),
+    W('005','PLT-002',1,100), W('006','PLT-002',3,100), W('007','PLT-002',5,100), W('008','PLT-002',7,100),
+    W('009','PLT-003',1,100), W('010','PLT-003',3,110), W('011','PLT-003',5,100), W('012','PLT-003',7,110)
+  ];
+  const P=(id,plantId,day,position)=>({ id:('POS-'+id), plantId, day, position, ts:ts(day,'08:00') });
+  const positions=[
+    P('001','PLT-001',1,'RACK A · P-04'), P('002','PLT-001',3,'RACK A · P-04'),
+    P('003','PLT-002',1,'RACK A · P-05'),
+    P('004','PLT-003',1,'RACK B · P-06')
+  ];
+  return { plants, images, measurements, water, positions, aicv:[], settings:defaultSettings() };
+}
+
+function writeDB(){
+  lsSet(KEYS.plants,JSON.stringify(DB.plants));
+  lsSet(KEYS.images,JSON.stringify(DB.images));
+  lsSet(KEYS.measurements,JSON.stringify(DB.measurements));
+  lsSet(KEYS.water,JSON.stringify(DB.water));
+  lsSet(KEYS.positions,JSON.stringify(DB.positions));
+  lsSet(KEYS.aicv,JSON.stringify(DB.aicv));
+  lsSet(KEYS.settings,JSON.stringify(DB.settings));
+}
+function seedFirstRun(){
+  const s=seedState();
+  lsSet(KEYS.plants,JSON.stringify(s.plants));
+  lsSet(KEYS.images,JSON.stringify(s.images));
+  lsSet(KEYS.measurements,JSON.stringify(s.measurements));
+  lsSet(KEYS.water,JSON.stringify(s.water));
+  lsSet(KEYS.positions,JSON.stringify(s.positions));
+  lsSet(KEYS.aicv,JSON.stringify(s.aicv));
+  lsSet(KEYS.settings,JSON.stringify(s.settings));
+  lsSet(KEYS.seeded,'1');
+}
+function ensureDB(){
+  if(!lsGet(KEYS.seeded)) seedFirstRun();
+  DB={
+    plants: readJson(KEYS.plants)||[],
+    images: readJson(KEYS.images)||[],
+    measurements: readJson(KEYS.measurements)||[],
+    water: readJson(KEYS.water)||[],
+    positions: readJson(KEYS.positions)||[],
+    aicv: readJson(KEYS.aicv)||[],
+    settings: Object.assign(defaultSettings(), readJson(KEYS.settings)||{})
+  };
+}
+function saveDB(){
+  try{ writeDB(); return true; }
+  catch(e){ console.warn('Phytometer storage write failed:',e); return false; }
+}
+function resetDemo(){
+  Object.keys(KEYS).forEach(k=>lsDel(KEYS[k]));
+  LS_OK=true;
+  seedFirstRun();
+  ensureDB();
+  location.hash='#overview';
+  applyRoute();
+}
+
+/* ============================================================
+   02 · ID GENERATION
+   ============================================================ */
+function nextId(prefix,list,width){
+  let max=0;
+  (list||[]).forEach(r=>{
+    const m=/^([A-Z]+)-(\d+)$/.exec(String(r.id||''));
+    if(m && m[1]===prefix) max=Math.max(max,parseInt(m[2],10));
+  });
+  return prefix+'-'+String(max+1).padStart(width||3,'0');
+}
+
+/* ============================================================
+   03 · COMPUTED MODEL (pure helpers over persisted records)
+   ============================================================ */
+function plantById(id){ return DB.plants.find(p=>p.id===id)||null; }
+function listFor(key,plantId,day){
+  return DB[key].filter(r=>{
+    if(plantId && r.plantId!==plantId) return false;
+    if(day!=null && r.day!==day) return false;
+    return true;
+  });
+}
+function latestRep(plantId,day,rep){
+  const cand=DB.measurements.filter(m=>m.plantId===plantId && m.day===day && m.rep===rep);
+  cand.sort((a,b)=> (b.attempt||1)-(a.attempt||1) || String(b.ts).localeCompare(String(a.ts)) );
+  return cand[0]||null;
+}
+function attemptsOf(plantId,day){
+  return DB.measurements.filter(m=>m.plantId===plantId && m.day===day)
+    .reduce((mx,m)=>Math.max(mx,m.attempt||1),0);
+}
+function pairDiffCm(plantId,day){
+  const r1=latestRep(plantId,day,1);
+  const r2=latestRep(plantId,day,2);
+  if(!r1||!r2) return null;
+  return Math.abs(valCm(r1)-valCm(r2));
+}
+function valCm(m){ const n=numOr(m&&m.valueCm); return n; }
+function expectedPlant(p){ return p && p.status==='active' && !!p.emerged; }
+function statusText(s){ return s==='active'?'Active':(s==='pending'?'Pending':'Inactive'); }
+function verdictOf(state){
+  return state==='pass'?'PASS':(state==='warn'?'WARN':(state==='fail'?'FAIL':'—'));
+}
+function vClass(state){
+  if(state==='pass') return 'sym-pass';
+  if(state==='warn') return 'sym-warn';
+  if(state==='fail') return 'sym-fail';
+  if(state==='na') return 'sym-na';
+  return 'sym-missing';
+}
+function msRowVerdict(m){
+  const thr=DB.settings.diffThresholdCm||1;
+  const reasons=[];
+  if((m.attempt||1)>1) reasons.push('retake recorded (attempt '+m.attempt+')');
+  const diff=pairDiffCm(m.plantId,m.day);
+  if(diff!=null && diff>thr) reasons.push('deviates '+diff.toFixed(1)+' cm from the paired repetition');
+  return { state: reasons.length?'warn':'pass', reasons };
+}
+
+/* ============================================================
+   04 · NAVIGATION (hash routes + screen activation)
+   ============================================================ */
+const SCREEN_ORDER=['overview','plants','images','measurements','water','positions','verification','quality','protocol','analysis','validation','settings'];
+let curPlantId=null;
+
+function currentRoute(){
+  let h=(location.hash||'').replace(/^#\/?/,'');
+  const parts=h.split('/');
+  const name=parts[0];
+  if(name==='plants' && parts[1]) return { screen:'plant-detail', plantId:decodeURIComponent(parts[1]) };
+  if(SCREEN_ORDER.indexOf(name)===-1) return { screen:'overview' };
+  return { screen:name };
+}
+function setRoute(screen,plantId){
+  let h=(screen==='overview')?'#overview':((screen==='plants')?'#plants':(screen==='plant-detail'?'#plants/'+encodeURIComponent(plantId||''):'#'+screen));
+  if(location.hash!==h) location.hash=h; else applyRoute();
+}
+function applyRoute(){
+  const r=currentRoute();
+  if(r.screen==='plant-detail'){
+    if(!plantById(r.plantId)){ curPlantId=null; showScreen('plants'); return; }
+    curPlantId=r.plantId;
+    activate('plant-detail', renderPlantDetail(curPlantId));
+  } else {
+    curPlantId=null;
+    const html=renderByScreen(r.screen);
+    activate(r.screen, html);
+  }
+}
+function renderByScreen(name){
+  switch(name){
+    case 'overview': return renderOverview();
+    case 'plants': return renderPlants();
+    case 'images': return renderImages();
+    case 'measurements': return renderMeasurements();
+    case 'water': return renderWater();
+    case 'positions': return renderPositions();
+    case 'verification': return renderVerification();
+    case 'quality': return renderQuality();
+    case 'protocol': return renderProtocol();
+    case 'analysis': return renderAnalysis();
+    case 'validation': return renderValidation();
+    case 'settings': return renderSettings();
+  }
+  return '';
+}
+function activate(name,html){
+  $$('.screen').forEach(s=>s.classList.remove('active'));
+  const sec=$('#screen-'+name);
+  if(sec){ sec.innerHTML=html; sec.classList.add('active'); }
+  const navActive=(name==='plant-detail')?'plants':name;
+  $$('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.screen===navActive));
+  closeNav();
+  window.scrollTo(0,0);
+}
+function showScreen(name,plantId){ setRoute(name,plantId); }
+function goDetail(plantId){ setRoute('plant-detail',plantId); }
+
+/* mobile grouped nav toggle */
+function toggleNav(){
+  const sb=$('#appSidebar'); const tg=$('#navToggle');
+  const open=sb.classList.toggle('open');
+  tg.setAttribute('aria-expanded', open?'true':'false');
+}
+function closeNav(){
+  const sb=$('#appSidebar'); if(!sb) return;
+  if(sb.classList.contains('open')){ sb.classList.remove('open'); const tg=$('#navToggle'); if(tg) tg.setAttribute('aria-expanded','false'); }
+}
+
+/* ============================================================
+   05 · MODAL MANAGER
+   ============================================================ */
+function openModal(html){
+  const ov=$('#overlay');
+  ov.innerHTML=html;
+  ov.classList.add('open');
+  document.body.classList.add('modal-open');
+  const f=ov.querySelector('input:not([type=hidden]), select, textarea');
+  if(f && f.focus) setTimeout(()=>f.focus(),0);
+}
+function closeModal(){
+  const ov=$('#overlay');
+  ov.classList.remove('open');
+  ov.innerHTML='';
+  document.body.classList.remove('modal-open');
+}
+function formErr(form,msg){
+  let el=form.querySelector('.form-error');
+  if(!el){ el=document.createElement('p'); el.className='form-error'; form.appendChild(el); }
+  el.textContent=msg;
+}
+function clearFormErr(form){ const el=form.querySelector('.form-error'); if(el) el.remove(); }
+function fd(form){ return Object.fromEntries(new FormData(form).entries()); }
+
+/* ============================================================
+   06 · SHARED MARKUP HELPERS
+   ============================================================ */
+function statusColor(s){ return s==='active'?'var(--green)':(s==='pending'?'var(--warning)':'var(--error)'); }
+function plantOptionsHtml(selected){
+  if(!DB.plants.length) return '';
+  return DB.plants.map(p=>'<option value="'+esc(p.id)+'"'+(p.id===selected?' selected':'')+'>'+esc(p.id)+' · '+esc(p.species)+'</option>').join('');
+}
+function dayOptionsHtml(selected){
+  const days=allDays();
+  if(!days.length) return '';
+  return days.map(d=>'<option value="'+d+'"'+(d===(selected==null?DB.settings.defaultDay:selected)?' selected':'')+'>DAY '+DAY2(d)+'</option>').join('');
+}
+function allDays(){
+  const s=new Set();
+  ['images','measurements','water','positions'].forEach(k=>
+    DB[k].forEach(r=>{ if(r.day!=null && r.day!=='') s.add(+r.day); }));
+  const arr=[...s].sort((a,b)=>a-b);
+  if(!arr.length && DB.settings.defaultDay) arr.push(+DB.settings.defaultDay);
+  return arr;
+}
+function chip(kind,count){
+  return '<span class="tchip">'+kind+(count>1?'<span class="n">×'+count+'</span>':'')+'</span>';
+}
+function voidHtml(title,sub,icon){
+  return '<div class="void">'+
+    '<svg class="void-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" style="margin:0 auto;">'+(icon||'<rect x="3" y="5" width="18" height="14" stroke="#7B8076" stroke-width="1.1"/><path d="M3 16L8 12L13 16L17 13L21 16" stroke="#7B8076" stroke-width="1.1"/>')+'</svg>'+
+    '<div class="void-title">'+esc(title)+'</div>'+
+    (sub?'<p class="void-sub">'+esc(sub)+'</p>':'')+
+    '</div>';
+}
+
+/* ============================================================
+   07 · OVERVIEW
+   ============================================================ */
+function renderOverview(){
+  const imgs=sortByTs(DB.images).reverse();
+  const ms=sortByTs(DB.measurements).reverse();
+  const latest=imgs[0]||null;
+  const hasPixels=latest && latest.dataUrl;
+  const totalRecords=DB.images.length+DB.measurements.length+DB.water.length+DB.positions.length;
+
+  /* hero specimen frame — the most recent persisted image wins */
+  let frameHtml='';
+  if(hasPixels){
+    frameHtml='<img class="frame-img" src="'+esc(latest.dataUrl)+'" alt="Raw image · '+esc(latest.plantId)+' · day '+latest.day+'" />';
+  } else {
+    frameHtml=
+      '<div class="frame-empty-text">'+
+        '<svg class="frame-empty-icon" viewBox="0 0 24 24" fill="none" style="margin:0 auto;">'+
+          '<rect x="3" y="5" width="18" height="14" stroke="#7B8076" stroke-width="1.1"/>'+
+          '<circle cx="9" cy="11" r="2" stroke="#7B8076" stroke-width="1.1"/>'+
+          '<path d="M3 16L8 12L13 16L17 13L21 16" stroke="#7B8076" stroke-width="1.1"/>'+
+        '</svg>'+
+        '<div class="frame-empty-title">'+(latest?'NO RAW PIXELS STORED':'NO RAW EVIDENCE YET')+'</div>'+
+        '<div class="frame-empty-sub">'+(latest?'Demo evidence record '+esc(latest.id)+' exists without pixel data — capture a real image in the evidence register.':'Capture an image in the evidence register.')+'</div>'+
+      '</div>';
+  }
+
+  /* latest image evidence cards (real persisted records) */
+  const cards=imgs.slice(0,4).map(im=>{
+    const thumb=im.dataUrl
+      ? '<img src="'+esc(im.dataUrl)+'" alt="" /><span class="lbl">'+esc(im.id)+'</span>'
+      : '<span class="lbl">'+esc(im.id)+'</span>';
+    return '<div class="ev-card"><div class="ev-card-thumb">'+thumb+'</div><div class="ev-card-body"><div class="ev-card-title">'+esc(im.plantId)+'</div><div class="ev-card-sub">DAY '+DAY2(im.day)+' · '+(im.calibration==='valid'?'RAW':im.calibration.toUpperCase())+'</div></div></div>';
+  }).join('');
+
+  /* latest manual reference rows */
+  const rows=ms.slice(0,5).map(m=>{
+    const v=msRowVerdict(m);
+    const st=v.state==='warn'?'tag-warn':'tag-pass';
+    return '<div class="method-row"><span class="method-dot"></span>'+
+      '<span class="method-label"><span class="s">'+esc(m.plantId)+' · DAY '+DAY2(m.day)+' · R'+m.rep+(m.attempt>1?' · A'+m.attempt:'')+'</span>'+dispValStr(valCm(m))+' '+esc(unitLabel())+'</span>'+
+      '<span class="method-meta '+st+'">'+(v.state==='warn'?'! WARN':'✓ PASS')+'</span></div>';
+  }).join('');
+
+  const seq=[[1,'Plant','Register a specimen into the collection.'],[2,'Image','Capture raw photographic evidence.'],[3,'Manual reference','Record a human height measurement.'],[4,'Water / position','Log watering and tray placement.'],[5,'AI / CV','Run automated measurement on the image.'],[6,'Verification','Compare AI output against reference.']]
+    .map(s=>'<div class="seq-item"><span class="seq-num">0'+s[0]+'</span><div class="seq-title">'+s[1]+'</div><div class="seq-desc">'+s[2]+'</div></div>').join('');
+
+  return ''+
+  '<div class="hero">'+
+    '<div>'+
+      '<div class="hero-eyebrow">EXPERIMENT / MANUAL REFERENCE × AI/CV</div>'+
+      '<h1 class="hero-title">Measure what grows.</h1>'+
+      '<p class="hero-desc">A controlled Phaseolus vulgaris experiment where human measurements become the reference layer for computer-vision analysis.</p>'+
+      '<div class="hero-meta">'+
+        '<div class="meta-item"><div class="meta-label">PROTOCOL</div><div class="meta-value">'+esc(DB.settings.protocolVersion||'v1')+' · locked</div></div>'+
+        '<div class="meta-item"><div class="meta-label">SPECIMENS</div><div class="meta-value mono">'+DB.plants.length+' registered</div></div>'+
+        '<div class="meta-item"><div class="meta-label">RECORDS</div><div class="meta-value mono">'+totalRecords+' persisted</div></div>'+
+        '<div class="meta-item"><div class="meta-label">SPECIES</div><div class="meta-value" style="font-style:italic;">Phaseolus vulgaris</div></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="specimen-frame">'+
+      '<div class="crop-mark tl"></div><div class="crop-mark tr"></div><div class="crop-mark bl"></div><div class="crop-mark br"></div>'+
+      '<div class="crosshair-h"></div><div class="crosshair-v"></div>'+
+      '<span class="frame-tag tl slash-line" style="color:var(--muted); z-index:3;"><span>SPECIMEN</span><span class="sl-sep">/</span><span>'+(latest?esc(latest.plantId):'—')+'</span></span>'+
+      '<span class="frame-tag tr slash-line" style="color:var(--muted); z-index:3; justify-content:flex-end;"><span>EXPERIMENT DAY</span><span class="sl-sep">/</span><span>'+(latest?DAY2(latest.day):'—')+'</span></span>'+
+      frameHtml+
+      '<span class="frame-tag bl" style="z-index:3;">RAW IMAGE</span>'+
+    '</div>'+
+  '</div>'+
+
+  '<div class="section-title">EXPERIMENT RECORD<span class="dot-accent"></span></div>'+
+  '<div class="sequence">'+seq+'</div>'+
+
+  '<div class="section-title">LATEST EVIDENCE<span class="dot-accent"></span></div>'+
+  '<div class="evidence-grid">'+
+    '<div><div class="evidence-col-label">IMAGE EVIDENCE · '+DB.images.length+' RECORD'+(DB.images.length===1?'':'S')+'</div>'+
+      (cards?'<div class="evidence-cards">'+cards+'</div>':'<p class="subnote" style="padding-top:8px;">No image evidence recorded yet — capture one in the evidence register.</p>')+
+    '</div>'+
+    '<div><div class="evidence-col-label">MANUAL REFERENCE · LAST '+Math.min(ms.length,5)+'</div>'+
+      (rows?'<div class="method-list">'+rows+'</div>':'<p class="subnote" style="padding-top:8px;">No manual measurements recorded yet.</p>')+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   08 · PLANTS — SPECIMEN REGISTER
+   ============================================================ */
+function renderPlants(){
+  const act=DB.plants.filter(p=>p.status==='active').length;
+  const pend=DB.plants.filter(p=>p.status==='pending').length;
+  const rows=DB.plants.map((p,i)=>{
+    return '<tr data-plant="'+esc(p.id)+'">'+
+      '<td><span class="row-index">'+pad2(i+1)+' /</span><span class="cell-id">'+esc(p.id)+'</span><span class="cell-sub">'+esc(p.species)+(p.note?' · '+esc(p.note):'')+'</span></td>'+
+      '<td class="mono-cell">'+esc(p.group)+'</td>'+
+      '<td class="mono-cell">'+esc(p.pot||'—')+'</td>'+
+      '<td><span class="status-dot" style="color:'+statusColor(p.status)+';">'+statusText(p.status)+'</span></td>'+
+      '<td class="mono-cell">'+(p.emerged?fmtDate(p.emerged):'—')+'</td>'+
+      '<td class="mono-cell">'+fmtDate(p.registered)+'</td>'+
+      '</tr>';
+  }).join('');
+  return ''+
+  '<div class="page-head-row" style="padding-top:40px;">'+
+    '<div class="page-head" style="padding:0;"><h1 class="page-title">Specimen register<span class="dot-accent"></span></h1><p class="page-desc">Registered plants / experimental subjects. Click a row to open the specimen record.</p></div>'+
+    '<div class="page-actions"><button class="btn btn-primary" data-act="plant-create">Register specimen</button></div>'+
+  '</div>'+
+  '<div class="subnote" style="margin-top:18px;">TOTAL '+DB.plants.length+' · ACTIVE '+act+' · PENDING '+pend+'</div>'+
+  (DB.plants.length
+    ? '<div class="table-scroll"><table class="table"><thead><tr><th>SPECIMEN</th><th>GROUP</th><th>POT</th><th>STATUS</th><th>EMERGED</th><th>REGISTERED</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    : voidHtml('No plants registered yet.','Register the first experimental specimen — each plant becomes its own permanent record.','<circle cx="12" cy="12" r="8" stroke="#7B8076" stroke-width="1.1"/><path d="M12 8v5M12 16h.01" stroke="#7B8076" stroke-width="1.4"/>'));
+}
+
+/* ============================================================
+   09 · PLANT DETAIL (specimen record + journal)
+   ============================================================ */
+function countsFor(p){
+  return {
+    photos: DB.images.filter(i=>i.plantId===p.id).length,
+    manual: DB.measurements.filter(m=>m.plantId===p.id).length,
+    water: DB.water.filter(w=>w.plantId===p.id).length,
+    positions: DB.positions.filter(x=>x.plantId===p.id).length,
+    aicv: DB.aicv.filter(a=>a.plantId===p.id).length
+  };
+}
+function plantDaySet(p){
+  const map=new Map();
+  const add=(day,ts)=>{ if(day==null||day==='') return; const k=+day; const e=map.get(k)||{day:k,ts:'',chips:{photo:0,manual:0,water:0,position:0,aicv:0}}; e.chips.photo+=0; map.set(k,e); };
+  const seen={};
+  const touch=(day,ts,kind)=>{
+    if(day==null||day==='') return;
+    const k=+day;
+    if(!seen[k]){ seen[k]={day:k,ts:'',photo:0,manual:0,water:0,position:0,aicv:0}; }
+    seen[k][kind]++;
+    if(!seen[k].ts || (ts&&ts<seen[k].ts)) seen[k].ts=ts||seen[k].ts;
+  };
+  DB.images.filter(i=>i.plantId===p.id).forEach(i=>touch(i.day,i.ts,'photo'));
+  DB.measurements.filter(m=>m.plantId===p.id).forEach(m=>touch(m.day,m.ts,'manual'));
+  DB.water.filter(w=>w.plantId===p.id).forEach(w=>touch(w.day,w.ts,'water'));
+  DB.positions.filter(x=>x.plantId===p.id).forEach(x=>touch(x.day,x.ts,'position'));
+  DB.aicv.filter(a=>a.plantId===p.id).forEach(a=>touch(a.day,a.ts,'aicv'));
+  const days=Object.keys(seen).map(k=>seen[k]).sort((a,b)=>a.day-b.day);
+  const dayless=DB.positions.some(x=>x.plantId===p.id && (x.day==null||x.day===''))||DB.aicv.some(a=>a.plantId===p.id && (a.day==null||a.day===''));
+  return { days, dayless };
+}
+function renderPlantDetail(id){
+  const p=plantById(id);
+  if(!p) return renderPlants();
+  const idx=DB.plants.indexOf(p)+1;
+  const c=countsFor(p);
+  const j=plantDaySet(p);
+  const dayHtml=j.days.map(d=>{
+    const chips=''+(d.photo?chip('PHOTO',d.photo):'')+(d.manual?chip('MANUAL REFERENCE',d.manual):'')+(d.water?chip('WATER',d.water):'')+(d.position?chip('POSITION',d.position):'')+(d.aicv?chip('AI / CV',d.aicv):'');
+    const dayMs=DB.measurements.filter(m=>m.plantId===p.id&&m.day===d.day).map(m=>{
+      const v=msRowVerdict(m);
+      return '<span class="'+(v.state==='warn'?'tag-warn':'tag-pass')+'" style="font-size:10.5px;">R'+m.rep+' '+dispValStr(valCm(m))+' '+(v.state==='warn'?'!':'✓')+'</span>';
+    });
+    return '<div class="timeline-day">'+
+      '<div class="timeline-rail"><div class="timeline-num">'+DAY2(d.day)+'</div></div>'+
+      '<div class="timeline-body">'+
+        '<div class="timeline-date">'+(d.ts?fmtTS(d.ts):'DATE NOT RECORDED')+'</div>'+
+        (chips?'<div class="timeline-chips">'+chips+'</div>':'')+
+        (dayMs.length?'<div class="timeline-chips" style="margin-top:10px;">'+dayMs.join('')+'</div>':'')+
+      '</div></div>';
+  }).join('');
+  return ''+
+  '<div class="detail-hero">'+
+    '<div class="page-head-row">'+
+      '<div class="detail-eyebrow slash-line" style="color:var(--green); font-size:11px; margin-bottom:10px;"><span>SPECIMEN</span><span class="sl-sep">/</span><span><b>'+pad2(idx)+'</b></span><span class="sl-sep">/</span><span>REGISTERED '+fmtDate(p.registered).toUpperCase()+'</span></div>'+
+      '<div class="page-actions"><button class="btn btn-sm" data-act="plant-edit" data-plant="'+esc(p.id)+'">Edit</button><button class="btn btn-sm btn-danger" data-act="plant-delete" data-plant="'+esc(p.id)+'">Delete</button></div>'+
+    '</div>'+
+    '<h1 class="detail-title">'+esc(p.id)+'</h1>'+
+    '<p class="detail-sub">'+esc(p.species)+'</p>'+
+    '<div class="detail-meta">'+
+      '<div class="m-item">STATUS <b style="color:'+statusColor(p.status)+';">'+statusText(p.status)+'</b></div>'+
+      '<div class="m-item">GROUP <b>'+esc(p.group)+'</b></div>'+
+      '<div class="m-item">POT <b>'+esc(p.pot||'—')+'</b></div>'+
+      '<div class="m-item">EMERGED <b>'+(p.emerged?fmtDate(p.emerged):'—')+'</b></div>'+
+      '<div class="m-item">REGISTERED <b>'+fmtDate(p.registered)+'</b></div>'+
+    '</div>'+
+    (p.note?'<p class="subnote" style="margin:18px 0 0;">NOTE · '+esc(p.note)+'</p>':'')+
+  '</div>'+
+  '<div class="record-counts">'+
+    '<div class="rc-item"><div class="rc-num">'+c.photos+'</div><div class="rc-label">PHOTOGRAPHS</div></div>'+
+    '<div class="rc-item"><div class="rc-num">'+c.manual+'</div><div class="rc-label">MANUAL</div></div>'+
+    '<div class="rc-item"><div class="rc-num">'+c.water+'</div><div class="rc-label">WATER</div></div>'+
+    '<div class="rc-item"><div class="rc-num">'+c.positions+'</div><div class="rc-label">POSITIONS</div></div>'+
+    '<div class="rc-item"><div class="rc-num">'+c.aicv+'</div><div class="rc-label">AI / CV</div></div>'+
+  '</div>'+
+  '<div class="section-title">EXPERIMENTAL JOURNAL<span class="dot-accent"></span></div>'+
+  (j.days.length
+    ? '<div class="timeline">'+dayHtml+(j.dayless?'<div class="timeline-day"><div class="timeline-rail"><div class="timeline-num">—</div></div><div class="timeline-body"><div class="timeline-date">NO EXPERIMENT DAY</div><div class="timeline-chips">'+chip('POSITION CONTEXT',1)+'</div><p class="subnote" style="margin-top:10px;">Position events are contextual and carry no experiment day.</p></div></div>':'')+'</div>'
+    : voidHtml('No recorded observations for this plant yet.','Record an image, a manual measurement or a watering event and it will appear here as a journal day.','<path d="M5 12h14" stroke="#7B8076" stroke-width="1.3"/><path d="M12 5v14" stroke="#7B8076" stroke-width="1.3"/>'));
+}
+
+/* ============================================================
+   10 · IMAGES — EVIDENCE REGISTER
+   ============================================================ */
+let pendingDataUrl=null;
+let pendingFileName='';
+
+function renderImages(){
+  const cards=sortByTs(DB.images).reverse().map(im=>{
+    const plate=im.dataUrl
+      ? '<div class="image-plate has-img"><img class="plate-img" src="'+esc(im.dataUrl)+'" alt="Raw image · '+esc(im.plantId)+' · day '+im.day+'" /><span class="plate-tag">'+esc(im.id)+'</span><span class="plate-tag br">DAY '+DAY2(im.day)+'</span></div>'
+      : '<div class="image-plate"><span class="lbl">RAW IMAGE</span><span class="lbl">'+esc(im.id)+'</span></div>';
+    const qCls=(im.quality==='low')?'tag-warn':'tag-pass';
+    const cCls=(im.calibration==='valid')?'tag-pass':(im.calibration==='retake'?'tag-warn':'tag-missing');
+    return '<div class="image-card">'+plate+
+      '<div class="image-info-main slash-line"><span><b>'+esc(im.plantId)+'</b></span><span class="sl-sep">/</span><span>DAY '+DAY2(im.day)+'</span><span class="sl-sep">/</span><span>RAW IMAGE</span></div>'+
+      '<div class="image-info-sub"><span class="'+qCls+'">QUALITY · '+esc(im.quality.toUpperCase())+'</span><span class="'+cCls+'">CALIB. · '+esc(im.calibration.toUpperCase())+'</span><span>'+fmtTS(im.ts)+'</span></div>'+
+      (im.note?'<div class="image-info-sub"><span>'+esc(im.note)+'</span></div>':'')+
+      '</div>';
+  }).join('');
+  const cap=DB.images.filter(i=>i.dataUrl).length;
+  return ''+
+  '<div class="page-head-row" style="padding-top:40px;">'+
+    '<div class="page-head" style="padding:0;"><h1 class="page-title">Image evidence<span class="dot-accent"></span></h1><p class="page-desc">Raw photographic evidence collected during the experiment. Files are stored locally with their metadata.</p></div>'+
+    '<div class="page-actions"><button class="btn btn-primary" data-act="img-create">Capture image</button></div>'+
+  '</div>'+
+  '<div class="subnote" style="margin-top:18px;">'+DB.images.length+' RECORD'+(DB.images.length===1?'':'S')+' · '+cap+' WITH PERSISTED PIXELS'+(DB.images.length?' · '+DB.images.filter(i=>i.calibration==='valid').length+' CALIBRATED':'')+'</div>'+
+  (DB.images.length
+    ? '<div class="image-grid">'+cards+'</div>'
+    : voidHtml('No image evidence recorded yet.','Capture a standardized side-view photograph of a specimen and it will be filed here with plant, day, quality and calibration metadata.','<rect x="3" y="5" width="18" height="14" stroke="#7B8076" stroke-width="1.1"/><circle cx="9" cy="11" r="2" stroke="#7B8076" stroke-width="1.1"/><path d="M3 16L8 12L13 16L17 13L21 16" stroke="#7B8076" stroke-width="1.1"/>'));
+}
+
+function openImageCreate(){
+  if(!DB.plants.length){ alert('Register a specimen first.'); return; }
+  pendingDataUrl=null; pendingFileName='';
+  const dayDef=allDays().length?Math.max.apply(null,allDays()):+DB.settings.defaultDay;
+  openModal(
+    '<div class="modal">'+
+      '<div class="modal-eyebrow">DAILY RECORDS / IMAGE CAPTURE</div>'+
+      '<h2 class="modal-title">Capture raw evidence</h2>'+
+      '<p class="modal-sub">The image file is stored locally with its acquisition metadata. Multiple images per specimen/day remain legitimate.</p>'+
+      '<form data-form="img-create" novalidate>'+
+        '<div class="form">'+
+          '<div class="field full"><label>Image file <span class="req">*</span></label><input type="file" id="imgFile" name="file" accept="image/*" required /><p class="hint">JPEG / PNG — preview appears before saving.</p></div>'+
+          '<div class="preview-plate" id="imgPreview"><span class="ph">NO FILE SELECTED</span></div>'+
+          '<div class="form-grid" style="margin-top:4px;">'+
+            '<div class="field"><label>Specimen <span class="req">*</span></label><select name="plantId">'+plantOptionsHtml(DB.plants[0].id)+'</select></div>'+
+            '<div class="field"><label>Experiment day <span class="req">*</span></label><input type="number" name="day" min="1" value="'+dayDef+'" required /><p class="hint">Operator-entered day — never derived from the clock.</p></div>'+
+            '<div class="field"><label>Image quality</label><select name="quality"><option value="good">good</option><option value="low">low</option></select></div>'+
+            '<div class="field"><label>Calibration status</label><select name="calibration"><option value="valid">valid</option><option value="pending">pending</option><option value="retake">retake</option></select></div>'+
+            '<div class="field full"><label>Note</label><textarea name="note"></textarea></div>'+
+          '</div>'+
+          '<div class="modal-foot"><button type="button" class="btn" data-act="modal-close">Cancel</button><button type="submit" class="btn btn-primary">File evidence</button></div>'+
+        '</div>'+
+      '</form>'+
+    '</div>');
+  const fileInp=$('#imgFile');
+  if(fileInp) fileInp.addEventListener('change',()=>{
+    const f=fileInp.files&&fileInp.files[0];
+    const ph=$('#imgPreview');
+    if(!f){ pendingDataUrl=null; pendingFileName=''; if(ph) ph.innerHTML='<span class="ph">NO FILE SELECTED</span>'; return; }
+    if(!f.type.match(/^image\//)){ if(ph) ph.innerHTML='<span class="ph">NOT AN IMAGE FILE</span>'; pendingDataUrl=null; return; }
+    pendingFileName=f.name;
+    const rd=new FileReader();
+    rd.onload=ev=>{ pendingDataUrl=String(ev.target.result); if(ph) ph.innerHTML='<img src="'+esc(pendingDataUrl)+'" alt="Selected image preview" />'; };
+    rd.readAsDataURL(f);
+  });
+}
+function submitImageCreate(form){
+  const d=fd(form);
+  clearFormErr(form);
+  const day=parseInt(d.day,10);
+  if(!d.plantId||!plantById(d.plantId)){ formErr(form,'Choose a valid specimen.'); return; }
+  if(!isFinite(day)||day<1){ formErr(form,'Experiment day must be a positive integer.'); return; }
+  if(!pendingDataUrl){ formErr(form,'Select an image file first.'); return; }
+  if(DB.images.length*1+storageUsedBytes()+Math.floor(pendingDataUrl.length*0.75)>4000000){
+    formErr(form,'Browser local storage is nearly full — remove some previously captured images to file a new one.');
+    return;
+  }
+  DB.images.push({ id:nextId('IMG',DB.images,3), plantId:d.plantId, day:day, quality:d.quality||'good', calibration:d.calibration||'valid', dataUrl:pendingDataUrl, note:(d.note||'').trim(), ts:nowISO() });
+  if(saveDB()){ closeModal(); applyRoute(); } else { formErr(form,'Could not persist the record to local storage.'); }
+}
+
+/* ============================================================
+   11 · MEASUREMENTS — MANUAL REFERENCE
+   ============================================================ */
+function statsOfMeasurements(){
+  const vals=DB.measurements.map(m=>valCm(m)).filter(v=>v!=null);
+  if(!vals.length) return null;
+  const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+  return { count:vals.length, mean, min:Math.min.apply(null,vals), max:Math.max.apply(null,vals) };
+}
+function renderMeasurements(){
+  const st=statsOfMeasurements();
+  const rows=sortByTs(DB.measurements).reverse().map(m=>{
+    const v=msRowVerdict(m);
+    const vCls=(v.state==='warn')?'verdict-warn':'verdict-pass';
+    const vTxt=(v.state==='warn')?'! WARN':'✓ PASS';
+    return '<div class="measure-row">'+
+      '<div class="measure-value">'+dispValStr(valCm(m))+'<span class="u">'+esc(unitLabel())+'</span></div>'+
+      '<div class="measure-meta slash-line" style="flex-direction:column; align-items:flex-start; gap:2px;">'+
+        '<span class="slash-line"><span><b>'+esc(m.plantId)+'</b></span><span class="sl-sep">/</span><span>DAY '+DAY2(m.day)+'</span><span class="sl-sep">/</span><span>R'+m.rep+'</span><span class="sl-sep">/</span><span>ATTEMPT '+pad2(m.attempt||1)+'</span><span class="sl-sep">/</span><span>'+fmtTS(m.ts)+'</span></span>'+
+        ((m.note||v.reasons.length)?'<span class="cell-sub">'+esc((m.note?(m.note+' · '):'')+v.reasons.join(' · '))+'</span>':'')+
+      '</div>'+
+      '<div class="measure-verdict '+vCls+'" title="'+esc(v.reasons.join(' · '))+'">'+vTxt+'</div>'+
+    '</div>';
+  }).join('');
+  return ''+
+  '<div class="page-head-row" style="padding-top:40px;">'+
+    '<div class="page-head" style="padding:0;"><h1 class="page-title">Manual reference<span class="dot-accent"></span></h1><p class="page-desc">Human measurements used as the reference layer for AI/CV evaluation. Two repetitions per plant per session; retakes increment the attempt counter and stay visible.</p></div>'+
+    '<div class="page-actions"><button class="btn btn-primary" data-act="ms-create">Record measurement</button></div>'+
+  '</div>'+
+  (st?'<div class="stats-band">'+
+      '<div class="sb-item"><div class="sb-num">'+st.count+'</div><div class="sb-label">RECORDS</div></div>'+
+      '<div class="sb-item"><div class="sb-num">'+dispValStr(st.mean)+'<span class="u">'+esc(unitLabel())+'</span></div><div class="sb-label">MEAN</div></div>'+
+      '<div class="sb-item"><div class="sb-num">'+dispValStr(st.min)+'<span class="u">'+esc(unitLabel())+'</span></div><div class="sb-label">MINIMUM</div></div>'+
+      '<div class="sb-item"><div class="sb-num">'+dispValStr(st.max)+'<span class="u">'+esc(unitLabel())+'</span></div><div class="sb-label">MAXIMUM</div></div>'+
+    '</div>':'')+
+  (rows?'<div class="measure-list" style="margin-top:20px;">'+rows+'</div>'
+    : voidHtml('No manual measurements recorded yet.','A manual reference is an independent human measurement — record repetition 1 and 2 for a specimen and experiment day.','<circle cx="12" cy="12" r="8" stroke="#7B8076" stroke-width="1.1"/><path d="M12 8v4M12 16h.01" stroke="#7B8076" stroke-width="1.3"/>'));
+}
+function openMsCreate(){
+  if(!DB.plants.length){ alert('Register a specimen first.'); return; }
+  const first=DB.plants[0].id;
+  const dayDef=allDays().length?Math.max.apply(null,allDays()):+DB.settings.defaultDay;
+  openModal(
+    '<div class="modal">'+
+      '<div class="modal-eyebrow">DAILY RECORDS / MANUAL MEASUREMENT</div>'+
+      '<h2 class="modal-title">Record manual reference</h2>'+
+      '<p class="modal-sub">Height in '+esc(unitLabel())+' — repetition 1 and repetition 2 for the same specimen and day. A retake increments the attempt.</p>'+
+      '<form data-form="ms-create" novalidate>'+
+        '<div class="form"><div class="form-grid">'+
+          '<div class="field"><label>Specimen <span class="req">*</span></label><select name="plantId" id="msPlant">'+plantOptionsHtml(first)+'</select></div>'+
+          '<div class="field"><label>Experiment day <span class="req">*</span></label><input type="number" name="day" id="msDay" min="1" value="'+dayDef+'" required /></div>'+
+          '<div class="field"><label>Repetition</label><select name="rep" id="msRep"><option value="1">R1</option><option value="2">R2</option></select></div>'+
+          '<div class="field"><label>Attempt <span class="req">*</span></label><input type="number" name="attempt" id="msAttempt" min="1" value="1" required /><p class="hint">Auto-suggested from prior attempts for this plant/day/repetition.</p></div>'+
+          '<div class="field"><label>Height in '+esc(unitLabel())+' <span class="req">*</span></label><input type="number" name="value" step="0.1" min="0.1" required placeholder="18.4" /></div>'+
+          '<div class="field"><label>Note</label><input name="note" placeholder="optional" /></div>'+
+        '</div>'+
+        '<div class="modal-foot"><button type="button" class="btn" data-act="modal-close">Cancel</button><button type="submit" class="btn btn-primary">File measurement</button></div>'+
+        '</div>'+
+      '</form>'+
+    '</div>');
+  suggestAttempt();
+}
+function suggestAttempt(){
+  const p=$('#msPlant'),d=$('#msDay'),r=$('#msRep');
+  if(!p||!d||!r) return;
+  const pid=p.value, day=parseInt(d.value,10), rep=parseInt(r.value,10);
+  const mx=DB.measurements.filter(m=>m.plantId===pid&&m.day===day&&m.rep===rep).reduce((a,m)=>Math.max(a,m.attempt||1),0);
+  const t=$('#msAttempt');
+  if(t) t.value=(mx||0)+1;
+}
+function submitMsCreate(form){
+  const d=fd(form);
+  clearFormErr(form);
+  const day=parseInt(d.day,10), rep=parseInt(d.rep,10), attempt=parseInt(d.attempt,10);
+  const cm=inputToCm(d.value);
+  if(!d.plantId||!plantById(d.plantId)){ formErr(form,'Choose a valid specimen.'); return; }
+  if(!isFinite(day)||day<1){ formErr(form,'Experiment day must be a positive integer.'); return; }
+  if(rep!==1&&rep!==2){ formErr(form,'Repetition must be R1 or R2.'); return; }
+  if(cm==null||cm<=0){ formErr(form,'Enter a valid height.'); return; }
+  if(!isFinite(attempt)||attempt<1){ formErr(form,'Attempt must be a positive integer.'); return; }
+  DB.measurements.push({ id:nextId('MSR',DB.measurements,3), plantId:d.plantId, day:day, rep:rep, attempt:attempt, valueCm:cm, note:(d.note||'').trim(), ts:nowISO() });
+  if(saveDB()){ closeModal(); applyRoute(); } else { formErr(form,'Could not persist the record.'); }
+}
+
+/* ============================================================
+   12 · WATER
+   ============================================================ */
+function renderWater(){
+  const rows=sortByTs(DB.water).reverse().map(w=>
+    '<div class="kv-row"><span class="k">DAY '+DAY2(w.day)+'</span><span class="v">'+esc(w.plantId)+'</span><span class="meta">'+fmtTS(w.ts)+(w.note?' · '+esc(w.note):'')+'</span><span class="val">'+esc(String(w.amount))+' '+esc(w.unit||'ml')+'</span></div>').join('');
+  const total=DB.water.reduce((a,w)=>a+(numOr(w.amount)||0),0);
+  return ''+
+  '<div class="page-head-row" style="padding-top:40px;">'+
+    '<div class="page-head" style="padding:0;"><h1 class="page-title">Water<span class="dot-accent"></span></h1><p class="page-desc">Watering records collected during the experiment. Daily gravimetric topping-up to the group target.</p></div>'+
+    '<div class="page-actions"><button class="btn btn-primary" data-act="water-create">Record watering</button></div>'+
+  '</div>'+
+  '<div class="subnote" style="margin-top:18px;">'+DB.water.length+' RECORD'+(DB.water.length===1?'':'S')+(total?' · TOTAL '+total+' ml':'')+'</div>'+
+  (rows?'<div class="row-list">'+rows+'</div>'
+    : voidHtml('No watering records yet.','Log the amount of water applied to a specimen on an experiment day.','<path d="M12 3s5 5.5 5 9a5 5 0 0 1-10 0c0-3.5 5-9 5-9z" stroke="#7B8076" stroke-width="1.1"/>'));
+}
+function openWaterCreate(){
+  if(!DB.plants.length){ alert('Register a specimen first.'); return; }
+  const dayDef=allDays().length?Math.max.apply(null,allDays()):+DB.settings.defaultDay;
+  openModal(
+    '<div class="modal">'+
+      '<div class="modal-eyebrow">DAILY RECORDS / WATERING</div>'+
+      '<h2 class="modal-title">Record watering</h2>'+
+      '<p class="modal-sub">Water topped up to the group target weight for this specimen on this day.</p>'+
+      '<form data-form="water-create" novalidate><div class="form"><div class="form-grid">'+
+        '<div class="field"><label>Specimen <span class="req">*</span></label><select name="plantId">'+plantOptionsHtml(DB.plants[0].id)+'</select></div>'+
+        '<div class="field"><label>Experiment day <span class="req">*</span></label><input type="number" name="day" min="1" value="'+dayDef+'" required /></div>'+
+        '<div class="field"><label>Amount <span class="req">*</span></label><input type="number" name="amount" step="1" min="0" required placeholder="100" /></div>'+
+        '<div class="field"><label>Unit</label><select name="unit"><option value="ml">ml</option><option value="l">l</option></select></div>'+
+        '<div class="field full"><label>Note</label><input name="note" placeholder="optional" /></div>'+
+      '</div>'+
+      '<div class="modal-foot"><button type="button" class="btn" data-act="modal-close">Cancel</button><button type="submit" class="btn btn-primary">File record</button></div>'+
+      '</div></form>'+
+    '</div>');
+}
+function submitWaterCreate(form){
+  const d=fd(form);
+  clearFormErr(form);
+  const day=parseInt(d.day,10), amount=parseFloat(d.amount);
+  if(!d.plantId||!plantById(d.plantId)){ formErr(form,'Choose a valid specimen.'); return; }
+  if(!isFinite(day)||day<1){ formErr(form,'Experiment day must be a positive integer.'); return; }
+  if(!isFinite(amount)||amount<0){ formErr(form,'Enter a valid amount.'); return; }
+  DB.water.push({ id:nextId('WTR',DB.water,3), plantId:d.plantId, day:day, amount:amount, unit:d.unit||'ml', ts:nowISO(), note:(d.note||'').trim() });
+  if(saveDB()){ closeModal(); applyRoute(); } else { formErr(form,'Could not persist the record.'); }
+}
+
+/* ============================================================
+   13 · POSITIONS (contextual — optional experiment day)
+   ============================================================ */
+function renderPositions(){
+  const rows=sortByTs(DB.positions).reverse().map(x=>
+    '<div class="kv-row"><span class="k">'+(x.day!=null&&x.day!==''?'DAY '+DAY2(x.day):'DAY —')+'</span><span class="v">'+esc(x.plantId)+'</span><span class="meta">'+fmtTS(x.ts)+'</span><span class="val">'+esc(x.position)+'</span></div>').join('');
+  return ''+
+  '<div class="page-head-row" style="padding-top:40px;">'+
+    '<div class="page-head" style="padding:0;"><h1 class="page-title">Positions<span class="dot-accent"></span></h1><p class="page-desc">Tray position records for each specimen. Position events are contextual — they never define an experiment day.</p></div>'+
+    '<div class="page-actions"><button class="btn btn-primary" data-act="pos-create">Record position</button></div>'+
+  '</div>'+
+  '<div class="subnote" style="margin-top:18px;">'+DB.positions.length+' RECORD'+(DB.positions.length===1?'':'S')+'</div>'+
+  (rows?'<div class="row-list">'+rows+'</div>'
+    : voidHtml('No position records yet.','Log the tray / rack position of a specimen when it is placed or moved.','<rect x="4" y="4" width="16" height="16" stroke="#7B8076" stroke-width="1.1"/><path d="M4 12h16M12 4v16" stroke="#7B8076" stroke-width="1.1" opacity=".5"/>'));
+}
+function openPosCreate(){
+  if(!DB.plants.length){ alert('Register a specimen first.'); return; }
+  const dayDef=allDays().length?Math.max.apply(null,allDays()):+DB.settings.defaultDay;
+  openModal(
+    '<div class="modal">'+
+      '<div class="modal-eyebrow">DAILY RECORDS / POSITION</div>'+
+      '<h2 class="modal-title">Record position</h2>'+
+      '<p class="modal-sub">Tray or rack position of the specimen. Experiment day is optional context.</p>'+
+      '<form data-form="pos-create" novalidate><div class="form"><div class="form-grid">'+
+        '<div class="field"><label>Specimen <span class="req">*</span></label><select name="plantId">'+plantOptionsHtml(DB.plants[0].id)+'</select></div>'+
+        '<div class="field"><label>Experiment day (optional)</label><input type="number" name="day" min="1" value="'+dayDef+'" placeholder="leave empty for context only" /></div>'+
+        '<div class="field full"><label>Position <span class="req">*</span></label><input name="position" required placeholder="RACK A · P-04" /></div>'+
+      '</div>'+
+      '<div class="modal-foot"><button type="button" class="btn" data-act="modal-close">Cancel</button><button type="submit" class="btn btn-primary">File record</button></div>'+
+      '</div></form>'+
+    '</div>');
+}
+function submitPosCreate(form){
+  const d=fd(form);
+  clearFormErr(form);
+  const dayRaw=(d.day||'').trim();
+  const day=(dayRaw==='')?null:parseInt(dayRaw,10);
+  if(!d.plantId||!plantById(d.plantId)){ formErr(form,'Choose a valid specimen.'); return; }
+  if(day!=null&&(!isFinite(day)||day<1)){ formErr(form,'Experiment day must be a positive integer or empty.'); return; }
+  if(!d.position||!d.position.trim()){ formErr(form,'Enter a position label.'); return; }
+  DB.positions.push({ id:nextId('POS',DB.positions,3), plantId:d.plantId, day:day, position:d.position.trim(), ts:nowISO() });
+  if(saveDB()){ closeModal(); applyRoute(); } else { formErr(form,'Could not persist the record.'); }
+}
+function storageUsedBytes(){
+  let n=0;
+  Object.keys(KEYS).forEach(k=>{ const raw=lsGet(k); if(raw) n+=raw.length; });
+  return n;
+}
+
+/* ============================================================
+   14 · VERIFICATION — DAILY INSPECTION BOARD
+   ============================================================ */
+let verifDay=null;
+function dayBounds(){
+  const d=allDays();
+  if(!d.length) return { min:1, max:1 };
+  return { min:d[0], max:d[d.length-1] };
+}
+function resolveVerifDay(){
+  const b=dayBounds();
+  if(verifDay==null) verifDay=Math.max(b.min, Math.min(b.max, +(DB.settings.defaultDay||1)));
+  if(verifDay<b.min) verifDay=b.min;
+  if(verifDay>b.max) verifDay=b.max;
+  return verifDay;
+}
+function boardVerdict(p,day,thr,ai){
+  const exp=expectedPlant(p);
+  if(!exp) return { state:'na', label:'N/A', issues:[] };
+  const issues=[];
+  const hasImg=DB.images.some(i=>i.plantId===p.id&&i.day===day);
+  const hasWater=DB.water.some(w=>w.plantId===p.id&&w.day===day);
+  const r1=latestRep(p.id,day,1);
+  const r2=latestRep(p.id,day,2);
+  if(!hasImg) issues.push('image missing');
+  if(!r1) issues.push('repetition 1 missing');
+  if(!r2) issues.push('repetition 2 missing');
+  if(!hasWater) issues.push('watering not recorded');
+  if(attemptsOf(p.id,day)<1) issues.push('no attempt recorded');
+  let state='pass';
+  if(ai && ai.absErr!=null){ if(ai.absErr>thr*2){ state='fail'; issues.push('AI/CV deviation '+ai.absErr.toFixed(1)+' '+unitLabel()); } else if(ai.absErr>thr){ state='warn'; issues.push('AI/CV deviation '+ai.absErr.toFixed(1)+' '+unitLabel()); } }
+  if(issues.length && state==='pass') state='warn';
+  if(state==='fail') return { state:'fail', label:'✗ FAIL', issues };
+  if(state==='warn') return { state:'warn', label:'! ATTN', issues };
+  return { state:'pass', label:'✓ PASS', issues };
+}
+function renderVerification(){
+  const day=resolveVerifDay();
+  const thr=DB.settings.diffThresholdCm||1;
+  const rows=DB.plants.map(p=>{
+    const hasImg=DB.images.some(i=>i.plantId===p.id&&i.day===day);
+    const hasWater=DB.water.some(w=>w.plantId===p.id&&w.day===day);
+    const exp=expectedPlant(p);
+    const r1=latestRep(p.id,day,1);
+    const r2=latestRep(p.id,day,2);
+    const att=attemptsOf(p.id,day);
+    const aic=DB.aicv.filter(a=>a.plantId===p.id&&a.day===day).sort((a,b)=>String(b.ts).localeCompare(String(a.ts)))[0]||null;
+    const aiAbs=(aic&&r1)?Math.abs(valCm(aic)-valCm(r1)):null;
+    const aiInfo=aiAbs!=null?{absErr:aiAbs}:null;
+    const v=boardVerdict(p,day,thr,aiInfo);
+    const cell=(cond,cl)=>{ return cond?'<span class="'+cl+'" aria-hidden="true">✓</span>':'<span class="sym-missing" aria-hidden="true">—</span>'; };
+    const expect=exp;
+    const msCell=(m)=>{ if(!m) return '<span class="sym-missing" title="Not recorded">—</span>'; const vv=msRowVerdict(m); const cls=vv.state==='warn'?'sym-warn':'sym-pass'; return '<span class="'+cls+'" title="'+esc(vv.reasons.join(' · '))+'">'+dispValStr(valCm(m))+'</span>'; };
+    const aiCell=(aic&&aiAbs!=null)?'<span class="'+(aiAbs>thr*2?'sym-fail':(aiAbs>thr?'sym-warn':'sym-pass'))+'">'+dispValStr(valCm(aic))+'</span>':'<span class="sym-missing">—</span><span class="micro-cap">MISSING</span>';
+    const dCell=aiAbs!=null?'<span class="'+(aiAbs>thr*2?'sym-fail':(aiAbs>thr?'sym-warn':'sym-pass'))+'">'+aiAbs.toFixed(1)+'</span>':'<span class="sym-missing">—</span>';
+    const imgCell=hasImg?cell(true,'sym-pass'):(expect?'<span class="sym-warn" title="Expected for an active specimen">!</span>':'<span class="sym-missing">—</span>');
+    const watCell=hasWater?cell(true,'sym-pass'):(expect?'<span class="sym-warn" title="Expected for an active specimen">!</span>':'<span class="sym-missing">—</span>');
+    const attCell=(att>0)?String(att):(expect?'<span class="sym-warn">0</span>':'<span class="sym-missing">0</span>');
+    return '<tr>'+
+      '<td class="cell-id"><span class="row-index">'+pad2(DB.plants.indexOf(p)+1)+' /</span>'+esc(p.id)+(exp?'':' <span class="subnote">· '+esc(p.status)+'</span>')+'</td>'+
+      '<td>'+imgCell+'</td><td>'+msCell(r1)+'</td><td>'+msCell(r2)+'</td>'+
+      '<td>'+attCell+'</td><td>'+watCell+'</td>'+
+      '<td>'+aiCell+'</td><td>'+dCell+'</td>'+
+      '<td><span class="'+vClass(v.state)+'" title="'+esc(v.issues.join(' · '))+'">'+v.label+'</span></td>'+
+      '</tr>';
+  }).join('');
+  const verdicts=DB.plants.map(p=>{
+    const aic=DB.aicv.filter(a=>a.plantId===p.id&&a.day===day)[0];
+    const r1=latestRep(p.id,day,1);
+    const aiAbs=(aic&&r1)?Math.abs(valCm(aic)-valCm(r1)):null;
+    return boardVerdict(p,day,thr,aiAbs!=null?{absErr:aiAbs}:null);
+  });
+  const complete=verdicts.filter(v=>v.state==='pass').length;
+  const attn=verdicts.filter(v=>v.state==='warn').length;
+  const fail=verdicts.filter(v=>v.state==='fail').length;
+  const legend='<div class="legend"><span class="li"><span class="sym sym-pass">✓</span> PASS — recorded / within expectation</span><span class="li"><span class="sym sym-warn">!</span> WARN — needs attention</span><span class="li"><span class="sym sym-fail">✗</span> FAIL — recorded deviation</span><span class="li"><span class="sym sym-missing">—</span> MISSING — not recorded</span><span class="li"><span class="sym sym-na">·</span> N/A — specimen not expected (pending/inactive)</span></div>';
+  return ''+
+  '<div class="page-head" style="padding-top:40px; padding-bottom:0;"><h1 class="page-title">Experiment verification<span class="dot-accent"></span></h1><p class="page-desc">Inspection of one experiment day across all specimens. The board answers: is this plant / day sufficiently recorded?</p></div>'+
+  '<div class="verif-top">'+
+    '<div><div class="day-select-label">EXPERIMENT DAY · OPERATOR-ENTERED</div>'+
+      '<div class="day-select"><button type="button" data-act="vday-dec" aria-label="Previous day">−</button><span>'+DAY2(day)+'</span><button type="button" data-act="vday-inc" aria-label="Next day">+</button></div></div>'+
+    '<div class="verif-stats"><div class="vstat"><div class="vstat-num">'+complete+'</div><div class="vstat-label">COMPLETE</div></div><div class="vstat attn"><div class="vstat-num">'+attn+'</div><div class="vstat-label">ATTENTION</div></div><div class="vstat fail"><div class="vstat-num">'+fail+'</div><div class="vstat-label">FAILED</div></div><div class="vstat"><div class="vstat-num">'+DB.plants.length+'</div><div class="vstat-label">SPECIMENS</div></div></div>'+
+  '</div>'+
+  legend+
+  (DB.plants.length
+    ? '<div class="table-scroll" style="margin-top:6px;"><table class="inspect-table"><thead><tr><th>SPECIMEN</th><th>IMAGE</th><th>R1</th><th>R2</th><th>ATTEMPTS</th><th>WATER</th><th>AI / CV</th><th>Δ</th><th>STATUS</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<p class="subnote" style="margin-top:14px;">Values in '+esc(unitLabel())+'. AI / CV columns stay — MISSING until an automated measurement exists for this plant and day; no value is invented.</p>'
+    : voidHtml('No plants registered yet.','Register specimens first — the inspection board compares manual reference and AI/CV presence per experiment day.'));
+}
+function shiftVerifDay(delta){
+  const b=dayBounds();
+  verifDay=(verifDay==null?resolveVerifDay():verifDay)+delta;
+  if(verifDay<b.min) verifDay=b.min;
+  if(verifDay>b.max) verifDay=b.max;
+  applyRoute();
+}
+
+/* ============================================================
+   15 · QUALITY CONTROL
+   ============================================================ */
+function qcItems(){
+  const out=[];
+  const thr=DB.settings.diffThresholdCm||1;
+  const hasAI=DB.aicv.length>0;
+  DB.plants.forEach(p=>{
+    if(p.status==='inactive') return;
+    const exp=expectedPlant(p);
+    const daySet=new Set();
+    DB.images.filter(i=>i.plantId===p.id).forEach(i=>daySet.add(i.day));
+    DB.measurements.filter(m=>m.plantId===p.id).forEach(m=>daySet.add(m.day));
+    [...daySet].sort((a,b)=>a-b).forEach(day=>{
+      const imgs=DB.images.filter(i=>i.plantId===p.id&&i.day===day);
+      const mss=DB.measurements.filter(m=>m.plantId===p.id&&m.day===day);
+      const waters=DB.water.filter(w=>w.plantId===p.id&&w.day===day);
+      if(exp&&mss.length&&!imgs.length) out.push({check:'Missing image evidence',subj:p.id+' · DAY '+DAY2(day),detail:'Manual reference recorded without a photograph for the same day.',st:'warn'});
+      if(exp&&imgs.length&&!mss.length) out.push({check:'Missing manual measurement',subj:p.id+' · DAY '+DAY2(day),detail:'Image exists but no manual reference was recorded.',st:'warn'});
+      if(exp&&mss.length&&!waters.length) out.push({check:'Watering not recorded',subj:p.id+' · DAY '+DAY2(day),detail:'No watering record for a day with measurements.',st:'warn'});
+      imgs.forEach(im=>{
+        if(im.calibration!=='valid') out.push({check:'Calibration incomplete',subj:im.id,detail:'Calibration status is '+im.calibration+'.',st:'warn'});
+        if(im.quality==='low') out.push({check:'Low image quality',subj:im.id,detail:'Quality flagged low by the operator.',st:'warn'});
+      });
+      if(mss.length){
+        const diff=pairDiffCm(p.id,day);
+        if(diff!=null&&diff>thr) out.push({check:'Inconsistent measurements',subj:p.id+' · DAY '+DAY2(day),detail:'Repetition difference '+diff.toFixed(1)+' '+unitLabel()+' exceeds threshold '+thr+' '+unitLabel()+'.',st:'warn'});
+        const maxA=mss.reduce((a,m)=>Math.max(a,m.attempt||1),0);
+        if(maxA>1) out.push({check:'Retake recorded',subj:p.id+' · DAY '+DAY2(day),detail:'Highest attempt is '+maxA+' — prior attempt kept visible.',st:'warn'});
+      }
+      const ai=DB.aicv.filter(a=>a.plantId===p.id&&a.day===day);
+      if(DB.settings.aicvEnabled&&hasAI&&mss.length&&!ai.length) out.push({check:'AI/CV result pending',subj:p.id+' · DAY '+DAY2(day),detail:'Manual reference exists but no automated measurement for this day.',st:'warn'});
+      ai.forEach(a=>{
+        const r1=latestRep(p.id,day,1);
+        if(r1){ const d=Math.abs(valCm(a)-valCm(r1)); if(d>thr*2) out.push({check:'AI/CV deviation',subj:a.id,detail:'Automated vs manual difference '+d.toFixed(1)+' '+unitLabel()+' — beyond double the threshold.',st:'fail'}); }
+      });
+    });
+  });
+  if(!hasAI&&DB.settings.aicvEnabled&&DB.measurements.length) out.push({check:'AI/CV pipeline idle',subj:'SYSTEM',detail:'No automated measurements recorded yet — the comparison layer has nothing to evaluate. This is not a measurement failure.',st:'info'});
+  const w={fail:0,warn:0,info:0};
+  out.forEach(o=>{ if(o.st!=='pass') w[o.st]=(w[o.st]||0)+1; });
+  return { items:out, w };
+}
+function renderQuality(){
+  const q=qcItems();
+  const rows=q.items.map((o,i)=>{
+    const stTxt=o.st==='fail'?'✗ FAIL':(o.st==='warn'?'! WARN':(o.st==='info'?'INFO':'✓ PASS'));
+    const cls=o.st==='fail'?'sym-fail':(o.st==='warn'?'sym-warn':(o.st==='info'?'sym-missing':'sym-pass'));
+    return '<div class="qc-row"><span class="check">'+esc(o.check)+'</span><span class="subj">'+esc(o.subj)+'</span><span class="detail">'+esc(o.detail)+'</span><span class="st '+cls+'">'+stTxt+'</span></div>';
+  }).join('');
+  return ''+
+  '<div class="page-head" style="padding-top:40px;"><h1 class="page-title">Quality control<span class="dot-accent"></span></h1><p class="page-desc">Cross-cutting checks over persisted records: image evidence, calibration, measurement consistency, watering and AI/CV completeness. Missing items are flagged — never deleted or hidden.</p></div>'+
+  '<div class="subnote" style="margin-top:18px;">FAIL '+q.w.fail+' · WARN '+q.w.warn+' · INFO '+q.w.info+(DB.settings.aicvEnabled?' · AI/CV ENABLED':' · AI/CV DISABLED')+'</div>'+
+  (q.items.length?'<div class="qc-list">'+rows+'</div>'
+    : voidHtml('No checks required yet.','Register specimens and record experiment days — quality control evaluates the persisted evidence automatically.','<path d="M12 3l8 4v5c0 4.5-3.4 7.7-8 9-4.6-1.3-8-4.5-8-9V7l8-4z" stroke="#7B8076" stroke-width="1.1"/><path d="M9 12l2 2 4-4" stroke="#7B8076" stroke-width="1.2"/>'));
+}
+
+/* ============================================================
+   16 · PROTOCOL (locked v1 — structured from the locked document)
+   ============================================================ */
+function renderProtocol(){
+  const sec=(t,body)=>'<div class="proto-sec"><h3>'+t+'</h3><div class="body">'+body+'</div></div>';
+  return ''+
+  '<div class="proto-head"><div><h1 class="proto-title">Protocol<span class="dot-accent"></span></h1><p class="page-desc" style="margin-top:6px;">Methodological basis of the experiment. Content reflects the locked protocol document.</p></div>'+
+  '<div class="protocol-chip"><span class="protocol-dot"></span>PROTOCOL '+esc(DB.settings.protocolVersion||'v1')+' · LOCKED</div></div>'+
+  '<div class="proto-chips"><span class="tchip">28 DAYS PLANNED</span><span class="tchip">GROUPS G0 · G1 · G2</span><span class="tchip">15 PLANTS / GROUP TARGET</span><span class="tchip">PHASEOLUS VULGARIS</span><span class="tchip">PRIMARY PARAMETER · HEIGHT (cm)</span></div>'+
+  sec('Species','<p>Phaseolus vulgaris — one plant per pot. Every plant carries a permanent <span class="mono">plant_id</span>; every record (image, weighing, manual measurement, failure) maps back to it.</p>')+
+  sec('Measurement method','<p>Primary parameter is plant height in cm. Height is defined as the vertical distance between the soil-level reference point at the emergence point of the stem and the highest above-ground point, measured along the defined image vertical and converted to physical units by calibration. The same definition applies to manual and automated measurement.</p><p>Secondary parameter: projected above-ground area.</p>')+
+  sec('Image capture','<p>One standardized photograph per plant per day, preferably in the same daily time window: side-view capture with consistent camera, distance, angle, lighting, background and orientation. A calibration reference should be present in every frame whenever practically possible. Each frame carries a unique <span class="mono">image_id</span> linked to <span class="mono">plant_id</span>.</p>')+
+  sec('Lighting','<p>Controlled and consistent illumination across the experiment. Lighting, background and plant orientation toward the camera are recorded controlled variables.</p>')+
+  sec('Camera position','<p>Fixed camera, distance and angle for side-view imaging. Any operational deviation must be explicitly logged.</p>')+
+  sec('Calibration','<p>A calibration reference in the frame converts image geometry to physical units via deterministic geometry. Calibration status is recorded per image (<span class="mono">valid / pending / retake</span>). Failed calibration is never deleted — it is flagged.</p>')+
+  sec('Watering protocol','<p>Daily gravimetric weighing of every pot, individually, with topping-up to the group target. Group targets are relative gravimetric goals: G0 = 100 %, G1 = 85 %, G2 = 70 % of the reference target — defined methodology, not physiological water-availability percentages. Weekly drift correction against the G0 control group must be documented.</p>')+
+  sec('Measurement frequency','<p>Manual reference measurements 3× weekly per session, with 2 repetitions per plant per session. Manual reference is an independent source and must never be influenced by automated output. Imaging and watering follow the daily protocol window.</p>')+
+  sec('AI/CV validation','<p>Automated pipeline principle: image → AI detection/segmentation → deterministic geometry → calibration → physical measurement → storage → statistical analysis. Automated results are validated against manual reference using absolute error, relative error, MAE, RMSE, bias and correlation — correlation alone is not evidence of accuracy.</p><p>Failures are never erased or hidden; allowed failure codes: <span class="mono">no_detection · poor_image_quality · occlusion · plant_damaged · plant_dead · calibration_failed</span>.</p>');
+}
+
+/* ============================================================
+   17 · ANALYSIS — GROWTH OVER TIME
+   ============================================================ */
+function growthSeries(){
+  const byDay=new Map();
+  DB.plants.forEach(p=>{
+    const days=new Set(DB.measurements.filter(m=>m.plantId===p.id).map(m=>m.day));
+    days.forEach(day=>{
+      const r1=latestRep(p.id,day,1);
+      if(r1&&valCm(r1)!=null){ if(!byDay.has(day)) byDay.set(day,[]); byDay.get(day).push(valCm(r1)); }
+    });
+  });
+  const days=[...byDay.keys()].sort((a,b)=>a-b);
+  const series=days.map(day=>{ const vals=byDay.get(day); return { day, n:vals.length, mean:vals.reduce((a,b)=>a+b,0)/vals.length }; });
+  return series;
+}
+function chartSVG(series){
+  const W=760, H=240, padL=52, padR=16, padT=16, padB=30;
+  const maxV=Math.max.apply(null,series.map(s=>s.mean));
+  const top=maxV*1.08||1;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const x=i=>series.length===1?padL+plotW/2:padL+(plotW*i/(series.length-1));
+  const y=v=>padT+plotH*(1-(v/top));
+  let grid='';
+  for(let g=0;g<=4;g++){
+    const val=top*g/4;
+    const yy=y(val);
+    grid+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="var(--border-soft)" stroke-width="1"/>';
+    grid+='<text x="'+(padL-8)+'" y="'+(yy+3)+'" text-anchor="end" font-size="9" fill="var(--muted)" font-family="JetBrains Mono, monospace">'+dispValStr(val)+'</text>';
+  }
+  const pts=series.map((s,i)=>x(i)+','+y(s.mean)).join(' ');
+  const dots=series.map((s,i)=>'<circle cx="'+x(i)+'" cy="'+y(s.mean)+'" r="3.4" fill="var(--paper)" stroke="var(--green)" stroke-width="1.6"><title>DAY '+DAY2(s.day)+' · mean '+dispValStr(s.mean)+' '+esc(unitLabel())+' (n='+s.n+')</title></circle>').join('');
+  const xl=series.map((s,i)=>'<text x="'+x(i)+'" y="'+(H-10)+'" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="JetBrains Mono, monospace">'+DAY2(s.day)+'</text>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Mean manual reference height per experiment day"><title>Growth over time — mean manual reference height per experiment day</title>'+grid+xl+
+    '<polyline points="'+pts+'" fill="none" stroke="var(--green)" stroke-width="1.6"/>'+dots+'</svg>';
+}
+function manualVsAiPairs(){
+  const out=[];
+  DB.plants.forEach(p=>{
+    const days=new Set([
+      ...DB.measurements.filter(m=>m.plantId===p.id).map(m=>m.day),
+      ...DB.aicv.filter(a=>a.plantId===p.id).map(a=>a.day)
+    ]);
+    days.forEach(day=>{
+      const r1=latestRep(p.id,day,1);
+      const aic=DB.aicv.filter(a=>a.plantId===p.id&&a.day===day).sort((a,b)=>String(b.ts).localeCompare(String(a.ts)))[0];
+      if(r1&&aic&&valCm(r1)!=null&&valCm(aic)!=null) out.push({ plantId:p.id, day, manual:valCm(r1), aicv:valCm(aic) });
+    });
+  });
+  return out.sort((a,b)=>a.day-b.day||a.plantId.localeCompare(b.plantId));
+}
+function renderAnalysis(){
+  const series=growthSeries();
+  const pairs=manualVsAiPairs();
+  const f1=n=>{ const x=Math.round(n*10)/10; return String(x); };
+  let table='';
+  if(series.length){
+    let prev=null;
+    table=series.map(s=>{
+      const d=(prev==null)?null:s.mean-prev;
+      const dTxt=(d==null)?'—':((d>=0?'+':'')+f1(d));
+      prev=s.mean;
+      return '<tr><td class="mono-cell">DAY '+DAY2(s.day)+'</td><td class="mono-cell">'+s.n+'</td><td class="mono-cell">'+dispValStr(s.mean)+' '+esc(unitLabel())+'</td><td class="mono-cell">'+dTxt+' '+esc(unitLabel())+'</td></tr>';
+    }).join('');
+  }
+  const pairRows=pairs.map(x=>'<tr><td class="cell-id">'+esc(x.plantId)+'</td><td class="mono-cell">DAY '+DAY2(x.day)+'</td><td class="mono-cell">'+dispValStr(x.manual)+'</td><td class="mono-cell">'+dispValStr(x.aicv)+'</td><td class="mono-cell">'+f1(Math.abs(x.manual-x.aicv))+'</td></tr>').join('');
+  return ''+
+  '<div class="page-head" style="padding-top:40px;"><h1 class="page-title">Analysis<span class="dot-accent"></span></h1><p class="page-desc">Experimental data derived from persisted records — growth over time and, once available, the manual × AI/CV comparison.</p></div>'+
+  '<div class="section-title" style="padding-top:30px;">GROWTH OVER TIME · MANUAL REFERENCE REP-1 MEAN<span class="dot-accent"></span></div>'+
+  (series.length
+    ? '<div class="chart-wrap">'+chartSVG(series)+'<p class="chart-cap">MEAN HEIGHT ('+esc(unitLabel().toUpperCase())+') PER EXPERIMENT DAY · N = SPECIMENS WITH REP-1 · '+DB.measurements.length+' MANUAL RECORDS</p></div>'+
+      '<div class="table-scroll"><table class="table"><thead><tr><th>DAY</th><th>SPECIMENS</th><th>MEAN</th><th>Δ FROM PREVIOUS DAY</th></tr></thead><tbody>'+table+'</tbody></table></div>'
+    : voidHtml('No measurements yet — nothing to chart.','The growth curve is drawn only from recorded manual reference values; no curve is fabricated.','<path d="M4 18L9 12l4 3 7-9" stroke="#7B8076" stroke-width="1.3" fill="none"/><circle cx="20" cy="6" r="1.6" fill="#7B8076"/>'))+
+  '<div class="section-title">MANUAL × AI/CV COMPARISON<span class="dot-accent"></span></div>'+
+  (pairs.length
+    ? '<div class="table-scroll"><table class="table"><thead><tr><th>SPECIMEN</th><th>DAY</th><th>MANUAL '+esc(unitLabel())+'</th><th>AI/CV '+esc(unitLabel())+'</th><th>|Δ|</th></tr></thead><tbody>'+pairRows+'</tbody></table></div>'
+    : '<p class="subnote" style="margin-top:20px;">No AI/CV measurements recorded yet — the comparison appears automatically once automated measurements exist alongside manual references. No values are simulated.</p>');
+}
+
+/* ============================================================
+   18 · VALIDATION — AI/CV vs MANUAL REFERENCE
+   ============================================================ */
+function renderValidation(){
+  const pairs=manualVsAiPairs();
+  const thr=DB.settings.diffThresholdCm||1;
+  let metrics=null;
+  if(pairs.length){
+    const errs=pairs.map(x=>Math.abs(x.manual-x.aicv));
+    const rel=pairs.map(x=>x.manual>0?(errs[pairs.indexOf(x)]/x.manual*100):null).filter(v=>v!=null);
+    const mae=errs.reduce((a,b)=>a+b,0)/errs.length;
+    const mre=rel.length?rel.reduce((a,b)=>a+b,0)/rel.length:null;
+    const pass=errs.filter(e=>e<=thr).length;
+    const warn=errs.filter(e=>e>thr&&e<=thr*2).length;
+    const failL=pairs.filter(x=>Math.abs(x.manual-x.aicv)>thr*2);
+    metrics={ mae, mre, pass, warn, failL, n:pairs.length };
+  }
+  const row=(l,v)=>'<div class="sb-item"><div class="sb-num">'+v+'</div><div class="sb-label">'+l+'</div></div>';
+  return ''+
+  '<div class="page-head" style="padding-top:40px;"><h1 class="page-title">Validation<span class="dot-accent"></span></h1><p class="page-desc">Evaluation of automated (AI/CV) measurement against the independent manual reference layer.</p></div>'+
+  (!metrics
+    ? voidHtml('NO AI/CV DATA AVAILABLE','Automated measurements are validated here against manual references. No AI/CV records exist yet, so no sample, error or pass-rate values are shown — nothing is simulated.','<circle cx="12" cy="12" r="8.5" stroke="#7B8076" stroke-width="1.1"/><path d="M12 8v5M12 16.5h.01" stroke="#7B8076" stroke-width="1.3"/>')+
+      '<div class="subnote" style="margin-top:20px;">THRESHOLD · '+thr+' '+esc(unitLabel())+' (PASS ≤ threshold · WARN ≤ 2× · FAIL above). Configured in Settings.</div>'
+    : '<div class="stats-band">'+
+        row('SAMPLES',metrics.n)+row('MAE · '+esc(unitLabel()),dispValStr(metrics.mae))+row('MEAN REL. ERROR',(metrics.mre!=null?dispValStr(metrics.mre):'—')+' %')+
+        row('PASS RATE',metrics.pass+' / '+metrics.n)+row('WARNINGS',metrics.warn)+row('FAILED SAMPLES',metrics.failL.length)+
+      '</div>'+
+      (metrics.failL.length?'<div class="section-title">FAILED SAMPLES · |Δ| > '+(thr*2)+' '+esc(unitLabel())+'<span class="dot-accent"></span></div>'+
+        '<div class="table-scroll"><table class="table"><thead><tr><th>SPECIMEN</th><th>DAY</th><th>MANUAL</th><th>AI/CV</th><th>|Δ|</th></tr></thead><tbody>'+
+        metrics.failL.map(x=>'<tr><td class="cell-id">'+esc(x.plantId)+'</td><td class="mono-cell">DAY '+DAY2(x.day)+'</td><td class="mono-cell">'+dispValStr(x.manual)+'</td><td class="mono-cell">'+dispValStr(x.aicv)+'</td><td class="mono-cell sym-fail">'+Math.abs(x.manual-x.aicv).toFixed(1)+'</td></tr>').join('')+
+        '</tbody></table></div>':'')+
+      '<div class="subnote" style="margin-top:20px;">CRITERIA · PASS ≤ '+thr+' '+esc(unitLabel())+' · WARN ≤ '+(thr*2)+' · FAIL above. Metrics: absolute error, mean absolute error (MAE), mean relative error, pass rate. Correlation alone is not evidence of accuracy.</div>');
+}
+
+/* ============================================================
+   19 · SETTINGS
+   ============================================================ */
+function renderSettings(){
+  const s=DB.settings;
+  return ''+
+  '<div class="page-head" style="padding-top:40px;"><h1 class="page-title">Settings<span class="dot-accent"></span></h1><p class="page-desc">Workspace configuration. Stored locally under the phytometer_* keys and applied to computation and display.</p></div>'+
+  '<form data-form="settings-save" novalidate><div class="set-grid">'+
+    '<div class="field"><label>Protocol version</label><input name="protocolVersion" value="'+esc(s.protocolVersion)+'" placeholder="v1" /></div>'+
+    '<div class="field"><label>Default measurement unit</label><select name="unit"><option value="cm"'+(s.unit==='cm'?' selected':'')+'>centimetres (cm)</option><option value="mm"'+(s.unit==='mm'?' selected':'')+'>millimetres (mm)</option></select></div>'+
+    '<div class="field"><label>Default experiment day</label><input type="number" name="defaultDay" min="1" value="'+s.defaultDay+'" /></div>'+
+    '<div class="field"><label>Quality threshold ('+esc(unitLabel())+')</label><input type="number" name="diffThresholdCm" step="0.1" min="0.1" value="'+s.diffThresholdCm+'" /><p class="hint">Repetition difference and AI/CV error threshold.</p></div>'+
+    '<div class="field full" style="flex-direction:row; align-items:center; gap:10px;"><input type="checkbox" name="aicvEnabled" id="aicvEnabled"'+(s.aicvEnabled?' checked':'')+' style="width:16px; height:16px;" /><label for="aicvEnabled" style="margin:0;">AI / CV measurement enabled</label></div>'+
+  '</div>'+
+  '<div class="modal-foot" style="border-top:none; padding-top:0; justify-content:space-between;"><button type="button" class="btn btn-danger" data-act="reset-demo">Reset demo data</button><button type="submit" class="btn btn-primary">Save settings</button></div></form>'+
+  '<p class="subnote" style="margin-top:22px;">Reset demo data restores the seed collection and wipes all locally persisted changes (including captured image pixels).</p>';
+}
+function submitSettings(form){
+  const d=fd(form);
+  clearFormErr(form);
+  const unit=d.unit==='mm'?'mm':'cm';
+  const defaultDay=parseInt(d.defaultDay,10);
+  const thr=parseFloat(d.diffThresholdCm);
+  if(!isFinite(defaultDay)||defaultDay<1){ formErr(form,'Default experiment day must be a positive integer.'); return; }
+  if(!isFinite(thr)||thr<=0){ formErr(form,'Quality threshold must be a positive number.'); return; }
+  DB.settings=Object.assign({},DB.settings,{
+    protocolVersion:(d.protocolVersion||'v1').trim()||'v1',
+    unit, defaultDay, diffThresholdCm:thr,
+    aicvEnabled: !!d.aicvEnabled
+  });
+  if(saveDB()){ applyRoute(); } else { formErr(form,'Could not persist settings.'); }
+}
+
+/* ============================================================
+   20 · PLANTS — REGISTER / EDIT / DELETE
+   ============================================================ */
+function plantFormHtml(p){
+  const isNew=!p;
+  return '<div class="modal">'+
+    '<div class="modal-eyebrow">COLLECTION '+(isNew?'/ NEW SPECIMEN':'/ EDIT SPECIMEN')+'</div>'+
+    '<h2 class="modal-title">'+(isNew?'Register specimen':'Edit specimen — '+esc(p.id))+'</h2>'+
+    '<p class="modal-sub">'+(isNew?'A unique specimen ID is generated automatically (PLT-XXX).':'Update the permanent record of this experimental subject. Records already filed are never altered.')+'</p>'+
+    '<form data-form="'+(isNew?'plant-create':'plant-edit')+'"'+(isNew?'':' data-id="'+esc(p.id)+'"')+' novalidate>'+
+      '<div class="form"><div class="form-grid">'+
+        '<div class="field"><label>Species <span class="req">*</span></label><input name="species" value="'+esc(isNew?'Phaseolus vulgaris':p.species)+'" required /></div>'+
+        '<div class="field"><label>Group</label><select name="group">'+['G0','G1','G2'].map(g=>'<option value="'+g+'"'+((isNew?(g==='G1'):(g===p.group))?' selected':'')+'>'+g+'</option>').join('')+'</select></div>'+
+        '<div class="field"><label>Pot</label><input name="pot" value="'+esc(isNew?'P-':p.pot)+'" placeholder="P-04" required /></div>'+
+        '<div class="field"><label>Status</label><select name="status">'+['active','pending','inactive'].map(s=>'<option value="'+s+'"'+((isNew?(s==='active'):(s===p.status))?' selected':'')+'>'+s+'</option>').join('')+'</select></div>'+
+        '<div class="field"><label>Registered <span class="req">*</span></label><input type="date" name="registered" value="'+(isNew?todayISO():p.registered)+'" required /></div>'+
+        '<div class="field"><label>Emerged (optional)</label><input type="date" name="emerged" value="'+esc(p&&p.emerged?p.emerged:'')+'" /></div>'+
+        '<div class="field full"><label>Note</label><textarea name="note">'+esc(p?p.note:'')+'</textarea></div>'+
+      '</div>'+
+      '<div class="modal-foot"><button type="button" class="btn" data-act="modal-close">Cancel</button><button type="submit" class="btn btn-primary">'+(isNew?'Register specimen':'Save changes')+'</button></div>'+
+      '</div>'+
+    '</form>'+
+  '</div>';
+}
+function openPlantCreate(){ openModal(plantFormHtml(null)); }
+function openPlantEdit(id){ const p=plantById(id); if(p) openModal(plantFormHtml(p)); }
+function submitPlantCreate(form){
+  const d=fd(form);
+  clearFormErr(form);
+  const species=(d.species||'').trim();
+  const pot=(d.pot||'').trim();
+  if(!species){ formErr(form,'Species is required.'); return; }
+  if(!pot){ formErr(form,'Pot label is required.'); return; }
+  if(!d.registered){ formErr(form,'Registration date is required.'); return; }
+  const id=nextId('PLT',DB.plants,3);
+  DB.plants.push({ id, species, group:d.group||'G1', pot, status:d.status||'active', emerged:d.emerged||'', registered:d.registered, note:(d.note||'').trim() });
+  if(saveDB()){ closeModal(); goDetail(id); } else { formErr(form,'Could not persist the specimen.'); }
+}
+function submitPlantEdit(form){
+  const d=fd(form);
+  clearFormErr(form);
+  const p=plantById(form.dataset.id);
+  if(!p){ formErr(form,'Specimen not found.'); return; }
+  const species=(d.species||'').trim();
+  const pot=(d.pot||'').trim();
+  if(!species){ formErr(form,'Species is required.'); return; }
+  if(!pot){ formErr(form,'Pot label is required.'); return; }
+  if(!d.registered){ formErr(form,'Registration date is required.'); return; }
+  p.species=species; p.group=d.group||p.group; p.pot=pot;
+  p.status=d.status||p.status; p.registered=d.registered; p.emerged=d.emerged||'';
+  p.note=(d.note||'').trim();
+  if(saveDB()){ closeModal(); applyRoute(); } else { formErr(form,'Could not persist the specimen.'); }
+}
+function deletePlant(id){
+  const p=plantById(id);
+  if(!p) return;
+  const c=countsFor(p);
+  const total=c.photos+c.manual+c.water+c.positions+c.aicv;
+  if(!window.confirm('Delete '+id+' permanently?\n\nThis also removes '+total+' associated record'+(total===1?'':'s')+' (images, measurements, watering, positions). This cannot be undone.')) return;
+  DB.plants=DB.plants.filter(x=>x.id!==id);
+  DB.images=DB.images.filter(x=>x.plantId!==id);
+  DB.measurements=DB.measurements.filter(x=>x.plantId!==id);
+  DB.water=DB.water.filter(x=>x.plantId!==id);
+  DB.positions=DB.positions.filter(x=>x.plantId!==id);
+  DB.aicv=DB.aicv.filter(x=>x.plantId!==id);
+  saveDB();
+  if(currentRoute().screen==='plant-detail'){ setRoute('plants'); } else { applyRoute(); }
+}
+function doResetDemo(){
+  if(!window.confirm('Reset demo data?\n\nThis wipes every locally persisted record (including captured images) and restores the seed collection.')) return;
+  resetDemo();
+}
+
+/* ============================================================
+   21 · ACTION DISPATCH + EVENT DELEGATION + BOOT
+   ============================================================ */
+function sortByTs(arr){ return arr.slice().sort((a,b)=>String(a.ts).localeCompare(String(b.ts))); }
+
+const ACTIONS={
+  'modal-close': closeModal,
+  'plant-create': openPlantCreate,
+  'plant-edit': d=>openPlantEdit(d.plant),
+  'plant-delete': d=>deletePlant(d.plant),
+  'img-create': openImageCreate,
+  'ms-create': openMsCreate,
+  'water-create': openWaterCreate,
+  'pos-create': openPosCreate,
+  'vday-inc': ()=>shiftVerifDay(1),
+  'vday-dec': ()=>shiftVerifDay(-1),
+  'nav-toggle': ()=>toggleNav(),
+  'reset-demo': ()=>doResetDemo()
+};
+const FORM_HANDLERS={
+  'plant-create': submitPlantCreate,
+  'plant-edit': submitPlantEdit,
+  'img-create': submitImageCreate,
+  'ms-create': submitMsCreate,
+  'water-create': submitWaterCreate,
+  'pos-create': submitPosCreate,
+  'settings-save': submitSettings
+};
+
+function go(name,plantId){ showScreen(name,plantId); }
+
+document.addEventListener('click',function(e){
+  const navItem=e.target.closest('.nav-item[data-screen]');
+  if(navItem){ go(navItem.dataset.screen); return; }
+  const row=e.target.closest('tr[data-plant]');
+  if(row){ goDetail(row.dataset.plant); return; }
+  const actEl=e.target.closest('[data-act]');
+  if(actEl){
+    const fn=ACTIONS[actEl.dataset.act];
+    if(fn){ e.preventDefault(); fn(actEl.dataset); return; }
+  }
+  const ov=$('#overlay');
+  if(ov && ov.classList.contains('open') && e.target===ov){ closeModal(); return; }
+  if(!e.target.closest('.sidebar')) closeNav();
+});
+document.addEventListener('submit',function(e){
+  const f=e.target.closest('form[data-form]');
+  if(!f) return;
+  e.preventDefault();
+  const fn=FORM_HANDLERS[f.dataset.form];
+  if(fn) fn(f); else formErr(f,'Unhandled form.');
+});
+document.addEventListener('change',function(e){
+  const t=e.target; if(!t||!t.id) return;
+  if(t.id==='msPlant'||t.id==='msDay'||t.id==='msRep') suggestAttempt();
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){ closeModal(); closeNav(); return; }
+  const it=e.target.closest && e.target.closest('.nav-item[data-screen]');
+  if(it && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); go(it.dataset.screen); }
+});
+
+window.addEventListener('hashchange',applyRoute);
+ensureDB();
+applyRoute();
+</script>
+
+</body>
+</html>

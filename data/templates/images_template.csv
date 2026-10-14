@@ -1,0 +1,2 @@
+image_id,plant_id,timestamp,experiment_day,image_path,camera_id,image_quality_status,calibration_status,cal_ref_id,failure_code,notes
+EXAMPLE_IMG-20260101-081500-000,EXAMPLE_PLT-000,2026-01-01T08:15:00,1,data/raw/images/EXAMPLE_IMG-20260101-081500-000.jpg,CAM-01,PASS,pass,CAL-REF-01,none,EXAMPLE_ROW_NOT_REAL_DATA

@@ -1,0 +1,94 @@
+/*
+ * Phytometer — design tokens (aligned with the phytometer.html design reference)
+ * ---------------------------------------------------------------------------
+ * A restrained botanical/scientific system: warm paper background, near-black
+ * type, one botanical green accent, muted hairline borders, status hues with
+ * strong text contrast. Tokens are the single source for color, type, spacing
+ * and geometry used by global.css. No decorative gradients, glows or neon.
+ */
+
+:root {
+  /* Surfaces — warm paper family (prototype: #F4F2EA / #EFEDE3) */
+  --bg: #f4f2ea;
+  --surface: #f2efe6;
+  --surface-raised: #fbfaf4;
+  --surface-muted: #e9e6da;
+  --surface-wash: #edefe4;
+
+  /* Text */
+  --text-primary: #1d211c;
+  --text-secondary: #52574c;
+  --text-faint: #7b8076;
+
+  /* Lines — hairline neutrals */
+  --border: #d7d5cc;
+  --border-strong: #c6c2b3;
+
+  /* Botanical accent (prototype: #365C3A / #26401F / #E7ECE2) */
+  --accent: #365c3a;
+  --accent-strong: #26401f;
+  --accent-soft: #e7ece2;
+  --accent-wash: #eef2e9;
+  --on-accent: #f4f2ea;
+
+  /* Status — always paired with a text/symbol label in the UI */
+  --status-pass: #365c3a;
+  --status-pass-bg: #e7ece2;
+  --status-warn: #a67c2e;
+  --status-warn-bg: #f3ecd9;
+  --status-fail: #8c4a3b;
+  --status-fail-bg: #f2e2db;
+  --status-neutral: #6a6f63;
+  --status-neutral-bg: #e8e6dc;
+  --status-locked: #4c4a68;
+  --status-locked-bg: #e9e8f0;
+  --status-ready: #365c3a;
+  --status-ready-bg: #e7ece2;
+
+  /* Typography — Space Grotesk display/sans, JetBrains Mono for labels */
+  --font-display: "Space Grotesk", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Space Grotesk", "Avenir Next", "Segoe UI", "Helvetica Neue", "Noto Sans", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+
+  /* Type scale (instrument-density body text) */
+  --fs-micro: 0.65625rem;   /* 10.5px — overlines, chips */
+  --fs-xs: 0.6875rem;       /* 11px — table captions/labels */
+  --fs-sm: 0.75rem;         /* 12px — hints, micro metadata */
+  --fs-md: 0.8125rem;       /* 13px — table cells, meta values */
+  --fs-base: 0.875rem;      /* 14px — body, form fields */
+  --fs-lg: 1rem;            /* 16px */
+  --fs-xl: 1.125rem;        /* 18px */
+  --fs-2xl: 1.375rem;       /* 22px — section display */
+  --fs-3xl: 1.75rem;        /* 28px — page display */
+  --fs-hero: 2.75rem;       /* 44px — home hero */
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.75rem;
+  --space-8: 3.5rem;
+
+  /* Geometry — deliberately minimal, squared instrument edges */
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  /* Elevation — deliberately minimal */
+  --shadow-xs: 0 1px 1px rgba(29, 33, 28, 0.05);
+  --shadow-sm: 0 1px 2px rgba(29, 33, 28, 0.06), 0 2px 6px rgba(29, 33, 28, 0.03);
+  --shadow-focus: 0 0 0 3px rgba(54, 92, 58, 0.2);
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --content-max: 1240px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+}

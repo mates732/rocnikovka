@@ -1,0 +1,2 @@
+plant_id,pot_id,group,emergence_date,status,notes,created_at,updated_at
+EXAMPLE_PLT-000,EXAMPLE_POT-000,G0,2026-01-01,active,EXAMPLE_ROW_NOT_REAL_DATA,2026-01-01T08:00:00,

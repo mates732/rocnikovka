@@ -1,0 +1,2 @@
+water_event_id,plant_id,timestamp,experiment_day,pot_mass_before_g,target_mass_g,water_added_ml,pot_mass_after_g,watering_status,operator,notes
+EXAMPLE_WTR-20260101-080000-000,EXAMPLE_PLT-000,2026-01-01T08:00:00,1,500.0,550.0,50.0,550.0,pass,EXAMPLE_OPERATOR,EXAMPLE_ROW_NOT_REAL_DATA

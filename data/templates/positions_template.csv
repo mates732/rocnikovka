@@ -1,0 +1,2 @@
+position_event_id,position_id,timestamp,plant_id,location,previous_location,operator,reason,notes
+EXAMPLE_POS-20260101-080000-000,P01,2026-01-01T08:00:00,EXAMPLE_PLT-000,RACK_A_ROW1_COL1,,EXAMPLE_OPERATOR,initial_assignment,EXAMPLE_ROW_NOT_REAL_DATA

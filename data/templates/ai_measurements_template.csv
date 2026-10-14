@@ -1,0 +1,2 @@
+measurement_id,image_id,plant_id,timestamp,model,model_version,pipeline_version,detection_status,segmentation_status,calibration_status,plant_height_cm,projected_area_cm2,confidence,failure_code,notes
+EXAMPLE_MSR-AICV-20260101-091000-000,EXAMPLE_IMG-20260101-081500-000,EXAMPLE_PLT-000,2026-01-01T09:10:00,EXAMPLE_MODEL,v0.0.0,pipeline-v0,pass,pass,pass,12.1,35.6,0.95,none,EXAMPLE_ROW_NOT_REAL_DATA

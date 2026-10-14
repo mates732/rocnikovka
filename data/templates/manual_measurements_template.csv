@@ -1,0 +1,2 @@
+measurement_id,plant_id,timestamp,experiment_day,repetition,plant_height_cm,observer,measurement_status,failure_code,notes
+EXAMPLE_MSR-MAN-20260101-090000-000,EXAMPLE_PLT-000,2026-01-01T09:00:00,1,1,12.3,EXAMPLE_OBSERVER,pass,none,EXAMPLE_ROW_NOT_REAL_DATA
