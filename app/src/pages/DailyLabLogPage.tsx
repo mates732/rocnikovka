@@ -18,7 +18,7 @@ type DailyLabLogDeps = {
 
 type DailyLabLogProps = { services?: DailyLabLogDeps };
 
-const PROTOCOL_GROUPS = ["G0", "G1", "G2"] as const;
+const PROTOCOL_GROUPS = ["G1", "G2", "G3"] as const;
 
 /** Renders a three-way presence state: recorded / genuinely missing / not applicable. */
 function PresenceCell({ state, count }: { state: "present" | "missing" | "not_applicable"; count?: number }) {

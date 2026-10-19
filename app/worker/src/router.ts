@@ -127,7 +127,9 @@ function parseOptionalEnum<T extends string | number>(value: unknown, field: str
   return parseEnum(value, field, allowed);
 }
 
-const GROUPS = ["G0", "G1", "G2"] as const;
+const GROUPS = ["G1", "G2", "G3"] as const;
+const EXEMPLAR_IDS = ["EX01", "EX02", "EX03", "EX04", "EX05", "EX06", "EX07", "EX08", "EX09"] as const;
+const TREATMENT_PERCENTAGES = [100, 85, 70] as const;
 const PLANT_STATUSES = ["active", "damaged", "dead", "excluded"] as const;
 const WATERING_STATUSES = ["pass", "warn", "fail"] as const;
 const POSITION_REASONS = ["initial_assignment", "rotation", "manual_override"] as const;
@@ -276,7 +278,9 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
         plant_id: str(body.plant_id, "plant_id"),
         pot_id: str(body.pot_id, "pot_id"),
         group_name: parseEnum(body.group_name, "group_name", GROUPS),
-        emergence_date: str(body.emergence_date, "emergence_date"),
+        exemplar_id: parseEnum(body.exemplar_id, "exemplar_id", EXEMPLAR_IDS),
+        treatment_percentage: parseEnum(body.treatment_percentage, "treatment_percentage", TREATMENT_PERCENTAGES),
+        emergence_date: optionalStr(body.emergence_date),
         status: parseEnum(body.status, "status", PLANT_STATUSES),
         notes: optionalStr(body.notes),
         created_at: str(body.created_at, "created_at"),
@@ -675,9 +679,9 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           "pot_dimensions_basis",
           POT_DIMENSION_BASES
         ),
-        planned_water_ml_g0: optionalNum(body.planned_water_ml_g0),
         planned_water_ml_g1: optionalNum(body.planned_water_ml_g1),
         planned_water_ml_g2: optionalNum(body.planned_water_ml_g2),
+        planned_water_ml_g3: optionalNum(body.planned_water_ml_g3),
         created_at: str(body.created_at, "created_at"),
         updated_at: optionalStr(body.updated_at),
       });
@@ -712,6 +716,8 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
         pot_id: str(body.pot_id, "pot_id"),
         plant_id: optionalStr(body.plant_id),
         group_name: parseOptionalEnum(body.group_name, "group_name", GROUPS),
+        exemplar_id: parseOptionalEnum(body.exemplar_id, "exemplar_id", EXEMPLAR_IDS),
+        treatment_percentage: optionalNum(body.treatment_percentage),
         substrate_mass_g: optionalNum(body.substrate_mass_g) ?? 72,
         empty_pot_mass_g: optionalNum(body.empty_pot_mass_g),
         saucer_mass_g: optionalNum(body.saucer_mass_g),

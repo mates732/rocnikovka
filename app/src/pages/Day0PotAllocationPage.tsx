@@ -5,14 +5,16 @@ import { StatusBadge } from "../components/StatusBadge";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorSummary } from "../components/ErrorSummary";
 import { services } from "../data/adapters";
-import { DAY0_PLAN, plannedPotIds, groupForPotNumber, detectPotConflicts, potIdFor } from "../data/day0Plan";
+import { DAY0_PLAN, plannedPotIds, groupForPotNumber, detectPotConflicts, potIdFor, exemplarIdForPotNumber, treatmentPercentageForGroup } from "../data/day0Plan";
 import type { Day0PotAllocationService } from "../services/interfaces";
-import type { Day0PotAllocation, Group, SowingStatus, EmergenceStatus, MassBasis } from "../types/entities";
+import type { Day0PotAllocation, Group, SowingStatus, EmergenceStatus, MassBasis, ExemplarId, TreatmentPercentage } from "../types/entities";
 
 type PotAllocationFormValues = {
   pot_id: string;
   plant_id: string;
   group_name: string;
+  exemplar_id: string;
+  treatment_percentage: string;
   substrate_mass_g: string;
   empty_pot_mass_g: string;
   saucer_mass_g: string;
@@ -41,9 +43,11 @@ type Day0PotAllocationPageDeps = {
 
 type Day0PotAllocationPageProps = { services?: Day0PotAllocationPageDeps };
 
-const GROUPS: Group[] = ["G0", "G1", "G2"];
+const GROUPS: Group[] = ["G1", "G2", "G3"];
 const SOWING_STATUSES: SowingStatus[] = ["pending", "sown", "failed"];
 const EMERGENCE_STATUSES: EmergenceStatus[] = ["not_sown", "sown", "awaiting", "emerged", "uncertain", "failed"];
+const EXEMPLAR_IDS: ExemplarId[] = ["EX01", "EX02", "EX03", "EX04", "EX05", "EX06", "EX07", "EX08", "EX09"] as const;
+const TREATMENT_PERCENTAGES: Record<Group, TreatmentPercentage> = { G1: 100, G2: 85, G3: 70 };
 
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000).toString().padStart(3, "0")}`;
@@ -59,6 +63,8 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
     pot_id: "",
     plant_id: "",
     group_name: "",
+    exemplar_id: "",
+    treatment_percentage: "",
     substrate_mass_g: "72",
     empty_pot_mass_g: "",
     saucer_mass_g: "",
@@ -112,6 +118,8 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
       pot_id: "",
       plant_id: "",
       group_name: "",
+      exemplar_id: "",
+      treatment_percentage: "",
       substrate_mass_g: "72",
       empty_pot_mass_g: "",
       saucer_mass_g: "",
@@ -141,6 +149,8 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
       pot_id: item.pot_id,
       plant_id: item.plant_id ?? "",
       group_name: item.group_name ?? "",
+      exemplar_id: item.exemplar_id ?? "",
+      treatment_percentage: item.treatment_percentage != null ? String(item.treatment_percentage) : "",
       substrate_mass_g: String(item.substrate_mass_g),
       empty_pot_mass_g: item.empty_pot_mass_g != null ? String(item.empty_pot_mass_g) : "",
       saucer_mass_g: item.saucer_mass_g != null ? String(item.saucer_mass_g) : "",
@@ -185,6 +195,8 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
       pot_id: formValues.pot_id?.trim() ?? "",
       plant_id: formValues.plant_id?.trim() ?? undefined,
       group_name: (formValues.group_name as Group) || undefined,
+      exemplar_id: (formValues.exemplar_id as ExemplarId) || undefined,
+      treatment_percentage: formValues.treatment_percentage === "" ? undefined : Number(formValues.treatment_percentage) as TreatmentPercentage,
       substrate_mass_g: Number(formValues.substrate_mass_g) || 72,
       empty_pot_mass_g: formValues.empty_pot_mass_g.trim() === "" ? undefined : Number(formValues.empty_pot_mass_g),
       saucer_mass_g: formValues.saucer_mass_g.trim() === "" ? undefined : Number(formValues.saucer_mass_g),
@@ -297,6 +309,8 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
         allocation_id: generateId("ALLOC"),
         pot_id: potId,
         group_name: groupForPotNumber(i + 1),
+        exemplar_id: exemplarIdForPotNumber(i + 1),
+        treatment_percentage: treatmentPercentageForGroup(groupForPotNumber(i + 1)),
         substrate_mass_g: DAY0_PLAN.substratePerPotG,
         seed_count: DAY0_PLAN.seedsPerPot,
         sowing_status: "pending",
@@ -348,9 +362,9 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
     );
   }
 
-  const g0Count = allocations.filter((a) => a.group_name === "G0").length;
   const g1Count = allocations.filter((a) => a.group_name === "G1").length;
   const g2Count = allocations.filter((a) => a.group_name === "G2").length;
+  const g3Count = allocations.filter((a) => a.group_name === "G3").length;
   const totalSubstrate = allocations.reduce((sum, a) => sum + (a.substrate_mass_g ?? 0), 0);
   const totalPlannedSeeds = allocations.reduce((sum, a) => sum + (a.seed_count ?? 0), 0);
   const recordedSown = allocations.filter((a) => a.seeds_sown != null);
@@ -382,9 +396,9 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
           <h2 id="confirmation-summary">Potvrzovací souhrn</h2>
         </div>
         <dl className="metadata-grid">
-          <div><dt>G0</dt><dd>{g0Count} květináčů</dd></div>
-          <div><dt>G1</dt><dd>{g1Count} květináčů</dd></div>
-          <div><dt>G2</dt><dd>{g2Count} květináčů</dd></div>
+          <div><dt>G1 (100%)</dt><dd>{g1Count} květináčů</dd></div>
+          <div><dt>G2 (85%)</dt><dd>{g2Count} květináčů</dd></div>
+          <div><dt>G3 (70%)</dt><dd>{g3Count} květináčů</dd></div>
           <div><dt>Celkem květináčů</dt><dd>{allocations.length} z {DAY0_PLAN.pots}</dd></div>
           <div><dt>Substrát na květináč</dt><dd>{DAY0_PLAN.substratePerPotG} g (pouze substrát)</dd></div>
           <div><dt>Celkový substrát</dt><dd>{totalSubstrate.toLocaleString("cs-CZ")} g (plán: {DAY0_PLAN.totalSubstrateG.toLocaleString("cs-CZ")} g)</dd></div>
@@ -392,7 +406,7 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
           <div><dt>Skutečně vysetá semena</dt><dd>{recordedSown.length > 0 ? totalSown : "nezadáno"}</dd></div>
           <div><dt>Vzešlé semenáčky</dt><dd>{recordedEmerged.length > 0 ? totalEmerged : "nezadáno"}</dd></div>
         </dl>
-        {allocations.length === 27 && g0Count === 9 && g1Count === 9 && g2Count === 9 ? (
+        {allocations.length === 27 && g1Count === 9 && g2Count === 9 && g3Count === 9 ? (
           <div className="day0-success">
             <StatusBadge status="PASS" />
             <strong>Alokace odpovídá plánu:</strong> 27 květináčů, 9 na skupinu.
@@ -400,7 +414,7 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
         ) : (
           <div className="day0-warning-block warn">
             <StatusBadge status="WARN" />
-            <strong>Alokace neodpovídá plánu:</strong> potřebný stav je G0=9, G1=9, G2=9, celkem 27.
+            <strong>Alokace neodpovídá plánu:</strong> potřebný stav je G1=9, G2=9, G3=9, celkem 27.
           </div>
         )}
       </section>
@@ -430,9 +444,26 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
                 <select id="pot-group" value={formValues.group_name ?? ""} onChange={(e) => handleChange("group_name", e.target.value)} disabled={submitting}>
                   <option value="">Vyberte skupinu</option>
                   {GROUPS.map((g) => (
-                    <option key={g} value={g}>{g} ({g === "G0" ? "100 %" : g === "G1" ? "85 %" : "70 %"})</option>
+                    <option key={g} value={g}>{g} ({TREATMENT_PERCENTAGES[g]} %)</option>
                   ))}
                 </select>
+              </label>
+
+              <label className="form-field" htmlFor="pot-exemplar">
+                <span className="form-label">Exemplar ID</span>
+                <select id="pot-exemplar" value={formValues.exemplar_id ?? ""} onChange={(e) => handleChange("exemplar_id", e.target.value)} disabled={submitting}>
+                  <option value="">Vyberte exemplar</option>
+                  {EXEMPLAR_IDS.map((ex) => (
+                    <option key={ex} value={ex}>{ex}</option>
+                  ))}
+                </select>
+                <span className="form-hint">EX01–EX09 within the group. Assigned automatically in bulk creation.</span>
+              </label>
+
+              <label className="form-field" htmlFor="pot-treatment">
+                <span className="form-label">Treatment %</span>
+                <input id="pot-treatment" type="number" min="0" max="100" step="1" value={formValues.treatment_percentage ?? ""} onChange={(e) => handleChange("treatment_percentage", e.target.value)} disabled={submitting} />
+                <span className="form-hint">Treatment percentage (100, 85, 70). Stored independently from group label.</span>
               </label>
 
               <label className="form-field" htmlFor="pot-substrate">
@@ -574,6 +605,8 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
                   <th scope="col">Pot ID</th>
                   <th scope="col">Plant ID</th>
                   <th scope="col">Skupina</th>
+                  <th scope="col">Exemplar</th>
+                  <th scope="col">Treatment %</th>
                   <th scope="col">Substrát (g)</th>
                   <th scope="col">Váhy (g)</th>
                   <th scope="col">Plán / vyseto</th>
@@ -604,6 +637,8 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
                           <span className={`chip chip-group chip-group-${a.group_name}`}>{a.group_name}</span>
                         ) : "—"}
                       </td>
+                      <td className="mono-cell">{a.exemplar_id ?? "—"}</td>
+                      <td className="mono-cell">{a.treatment_percentage ?? "—"}</td>
                       <td className="mono-cell">{a.substrate_mass_g}</td>
                       <td className="mono-cell">
                         {weights.length > 0 ? weights.join(", ") : "—"}

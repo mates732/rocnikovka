@@ -42,7 +42,7 @@ export async function loadPlants() {
 // ----------------------------------------------------------------------------
 // The smallest production-quality plant registration workflow. Plant identity
 // is foundational for traceability, so the form mirrors the exact backend
-// contract (PLT-XXX / POT-XXX / G0|G1|G2 / status enum / ISO date / explicit
+// contract (PLT-XXX / POT-XXX / G1|G2|G3 / status enum / ISO date / explicit
 // created_at). Nothing is invented or derived — emergence date and created_at
 // are explicitly entered, and no randomization is performed here (group
 // assignment belongs to the existing experimental workflow).
@@ -52,7 +52,7 @@ const TIMESTAMP_SECOND_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PLANT_ID_RE = /^PLT-\d{3}$/;
 const POT_ID_RE = /^POT-\d{3}$/;
-const GROUPS: Group[] = ["G0", "G1", "G2"];
+const GROUPS: Group[] = ["G1", "G2", "G3"];
 const PLANT_STATUSES: PlantStatus[] = ["active", "damaged", "dead", "excluded"];
 
 export type PlantFormValues = {
@@ -103,7 +103,7 @@ export function validatePlantForm(values: PlantFormValues, usedPotIds?: Set<stri
   if (!values.group_name) {
     add("group_name", "required", "Select a group.");
   } else if (!GROUPS.includes(values.group_name)) {
-    add("group_name", "enum.invalid", "Group must be G0, G1 or G2.");
+    add("group_name", "enum.invalid", "Group must be G1, G2 or G3.");
   }
 
   const emergenceDate = values.emergence_date.trim();
@@ -157,7 +157,7 @@ export function PlantRegistrationForm({ createPlant, onCreated, existingPlants }
   const [submitting, setSubmitting] = useState(false);
 
   const groupCounts = useMemo(() => {
-    const counts: Record<Group, number> = { G0: 0, G1: 0, G2: 0 };
+    const counts: Record<Group, number> = { G1: 0, G2: 0, G3: 0 };
     for (const p of existingPlants) {
       if (counts[p.group_name] !== undefined) counts[p.group_name]++;
     }

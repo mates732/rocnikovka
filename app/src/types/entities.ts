@@ -1,4 +1,16 @@
-export type Group = "G0" | "G1" | "G2";
+/**
+ * Treatment percentage for each group — stored independently from the group ID.
+ * Protocol v1: G1 = 100%, G2 = 85%, G3 = 70%.
+ * Do not derive from the group label; the percentage is authoritative data.
+ */
+export type TreatmentPercentage = 100 | 85 | 70;
+
+/** Experiment group identifiers — G1, G2, G3 per authoritative protocol. */
+export type Group = "G1" | "G2" | "G3";
+
+/** Exemplar identifier within a group: EX01..EX09 (9 pots per group). */
+export type ExemplarId = `EX${"01" | "02" | "03" | "04" | "05" | "06" | "07" | "08" | "09"}`;
+
 export type PlantStatus = "active" | "damaged" | "dead" | "excluded";
 export type WateringStatus = "pass" | "warn" | "fail";
 export type ImageQualityStatus = "PASS" | "WARN" | "FAIL";
@@ -23,7 +35,9 @@ export interface Plant {
   plant_id: string;
   pot_id: string;
   group_name: Group;
-  emergence_date: string;
+  exemplar_id: ExemplarId;
+  treatment_percentage: TreatmentPercentage;
+  emergence_date?: string;
   status: PlantStatus;
   notes?: string;
   created_at?: string;
@@ -150,6 +164,9 @@ export interface Day0PhysicalConfig {
   /**
    * Pot physical constants — controlled variables, not measurements taken
    * during the experiment. Nullable: nothing is pre-filled.
+   * NOTE: These dimensions are UNVERIFIED against physical measurements.
+   * The original protocol specified ~9 cm diameter, 7 cm height, 0.4 L.
+   * Current values (12 cm, 10 cm, 1.0 L) are placeholders and must be verified.
    */
   pot_material?: string;
   pot_diameter_cm?: number;
@@ -173,10 +190,11 @@ export interface Day0PhysicalConfig {
   /**
    * PLANNED watering volume per pot per group (ml). A plan value only — never
    * an actual watering event and never a gravimetric target mass.
+   * G1 = 100% (75 ml), G2 = 85% (64 ml), G3 = 70% (53 ml).
    */
-  planned_water_ml_g0?: number;
   planned_water_ml_g1?: number;
   planned_water_ml_g2?: number;
+  planned_water_ml_g3?: number;
   created_at: string;
   updated_at?: string;
 }
@@ -190,6 +208,8 @@ export interface Day0PotAllocation {
   pot_id: string;
   plant_id?: string;
   group_name?: Group;
+  exemplar_id?: ExemplarId;
+  treatment_percentage?: TreatmentPercentage;
   substrate_mass_g: number;
   empty_pot_mass_g?: number;
   saucer_mass_g?: number;

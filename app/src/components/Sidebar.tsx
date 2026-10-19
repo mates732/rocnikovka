@@ -7,25 +7,25 @@ type NavSection = { title: string; items: NavItem[] };
 
 const navSections: NavSection[] = [
   {
-    title: "Group 01 · Workspace",
+    title: "Workspace",
     items: [{ to: "/", label: "Overview", exact: true }],
   },
   {
-    title: "Group 02 · Collection",
+    title: "Collection",
     items: [{ to: "/plants", label: "Plants" }],
   },
   {
-    title: "Group 02B · Day 0 příprava",
+    title: "Day 0 Setup",
     items: [
-      { to: "/experiment/day0", label: "Day 0 přehled" },
-      { to: "/experiment/day0/equipment", label: "Vybavení" },
-      { to: "/experiment/day0/physical-config", label: "Fyzické nastavení" },
-      { to: "/experiment/day0/pot-allocation", label: "Květináče a výsev" },
-      { to: "/experiment/day0/methodology-decisions", label: "Metodologická rozhodnutí" },
+      { to: "/experiment/day0", label: "Day 0 Overview" },
+      { to: "/experiment/day0/equipment", label: "Equipment" },
+      { to: "/experiment/day0/physical-config", label: "Physical Config" },
+      { to: "/experiment/day0/pot-allocation", label: "Pots & Sowing" },
+      { to: "/experiment/day0/methodology-decisions", label: "Methodology Decisions" },
     ],
   },
   {
-    title: "Group 03 · Daily records",
+    title: "Daily Records",
     items: [
       { to: "/images", label: "Images" },
       { to: "/measurements", label: "Measurements" },
@@ -34,17 +34,17 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: "Group 04 · Experiment",
+    title: "Experiment",
     items: [
       { to: "/experiment/setup", label: "Setup" },
-      { to: "/experiment/daily-log", label: "Daily lab log" },
+      { to: "/experiment/daily-log", label: "Daily Lab Log" },
       { to: "/experiment/verification", label: "Verification" },
-      { to: "/experiment/quality", label: "Quality control" },
+      { to: "/experiment/quality", label: "Quality Control" },
       { to: "/experiment/protocol", label: "Protocol" },
     ],
   },
   {
-    title: "Group 05 · System",
+    title: "System",
     items: [
       { to: "/analysis", label: "Analysis" },
       { to: "/validation", label: "Validation" },

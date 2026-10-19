@@ -756,4 +756,184 @@ export function migrate(db: Database.Database) {
       `
     ).run(new Date().toISOString());
   }
+
+  if (currentVersion < 9) {
+    // Migration v9: Update groups to G1/G2/G3, add exemplar_id and treatment_percentage,
+    // make emergence_date nullable
+    db.exec(`
+      PRAGMA foreign_keys = OFF;
+
+      -- Update plants table
+      CREATE TABLE plants_new (
+        plant_id TEXT PRIMARY KEY,
+        pot_id TEXT NOT NULL UNIQUE,
+        group_name TEXT NOT NULL CHECK (group_name IN ('G1','G2','G3')),
+        exemplar_id TEXT NOT NULL CHECK (exemplar_id IN ('EX01','EX02','EX03','EX04','EX05','EX06','EX07','EX08','EX09')),
+        treatment_percentage INTEGER NOT NULL CHECK (treatment_percentage IN (100,85,70)),
+        emergence_date TEXT,  -- NOW NULLABLE
+        status TEXT NOT NULL CHECK (status IN ('active','damaged','dead','excluded')),
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT,
+        -- Day 0 fields
+        sowing_date TEXT,
+        seed_count INTEGER DEFAULT 3 CHECK (seed_count >= 0),
+        substrate_mass_g REAL,
+        empty_pot_mass_g REAL,
+        saucer_mass_g REAL,
+        seed_mass_g REAL,
+        emergence_status TEXT CHECK (emergence_status IN ('not_sown','sown','awaiting','emerged','uncertain','failed')) DEFAULT 'not_sown'
+      );
+
+      INSERT INTO plants_new (
+        plant_id, pot_id, group_name, exemplar_id, treatment_percentage, emergence_date, status, notes, created_at, updated_at,
+        sowing_date, seed_count, substrate_mass_g, empty_pot_mass_g, saucer_mass_g, seed_mass_g, emergence_status
+      )
+      SELECT
+        plant_id, pot_id,
+        CASE group_name
+          WHEN 'G0' THEN 'G1'
+          WHEN 'G1' THEN 'G2'
+          WHEN 'G2' THEN 'G3'
+          ELSE group_name
+        END,
+        -- Map old group to exemplar: G0->EX01..EX09, G1->EX01..EX09, G2->EX01..EX09
+        -- Since we don't have the original pot index, we'll assign based on pot_id numeric part
+        'EX' || printf('%02d', CAST(REPLACE(pot_id, 'POT-', '') AS INTEGER) % 9 + 1),
+        CASE group_name
+          WHEN 'G0' THEN 100
+          WHEN 'G1' THEN 85
+          WHEN 'G2' THEN 70
+          ELSE 100
+        END,
+        emergence_date, status, notes, created_at, updated_at,
+        sowing_date, seed_count, substrate_mass_g, empty_pot_mass_g, saucer_mass_g, seed_mass_g, emergence_status
+      FROM plants;
+
+      DROP TABLE plants;
+      ALTER TABLE plants_new RENAME TO plants;
+
+      -- Update day0_pot_allocation table
+      CREATE TABLE day0_pot_allocation_new (
+        allocation_id TEXT PRIMARY KEY,
+        pot_id TEXT NOT NULL UNIQUE,
+        plant_id TEXT,
+        group_name TEXT CHECK (group_name IN ('G1','G2','G3')),
+        exemplar_id TEXT CHECK (exemplar_id IN ('EX01','EX02','EX03','EX04','EX05','EX06','EX07','EX08','EX09')),
+        treatment_percentage INTEGER CHECK (treatment_percentage IN (100,85,70)),
+        substrate_mass_g REAL NOT NULL DEFAULT 72,
+        empty_pot_mass_g REAL,
+        saucer_mass_g REAL,
+        seed_count INTEGER NOT NULL DEFAULT 3 CHECK (seed_count >= 0),
+        seeds_sown INTEGER CHECK (seeds_sown >= 0),
+        seedlings_emerged INTEGER CHECK (seedlings_emerged >= 0),
+        plants_retained INTEGER CHECK (plants_retained >= 0),
+        seed_mass_g REAL,
+        initial_water_ml REAL,
+        initial_water_drained_ml REAL,
+        initial_assembled_mass_g REAL,
+        mass_basis TEXT NOT NULL DEFAULT 'unknown' CHECK (mass_basis IN ('measured','approximate','unknown')),
+        sowing_date TEXT,
+        sowing_status TEXT CHECK (sowing_status IN ('pending','sown','failed')) DEFAULT 'pending',
+        emergence_status TEXT CHECK (emergence_status IN ('not_sown','sown','awaiting','emerged','uncertain','failed')) DEFAULT 'not_sown',
+        emergence_date TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT,
+        FOREIGN KEY (plant_id) REFERENCES plants (plant_id)
+      );
+
+      INSERT INTO day0_pot_allocation_new (
+        allocation_id, pot_id, plant_id, group_name, exemplar_id, treatment_percentage,
+        substrate_mass_g, empty_pot_mass_g, saucer_mass_g, seed_count,
+        seeds_sown, seedlings_emerged, plants_retained, seed_mass_g,
+        initial_water_ml, initial_water_drained_ml, initial_assembled_mass_g,
+        mass_basis, sowing_date, sowing_status, emergence_status, emergence_date, notes, created_at, updated_at
+      )
+      SELECT
+        allocation_id, pot_id, plant_id,
+        CASE group_name
+          WHEN 'G0' THEN 'G1'
+          WHEN 'G1' THEN 'G2'
+          WHEN 'G2' THEN 'G3'
+          ELSE group_name
+        END,
+        'EX' || printf('%02d', CAST(REPLACE(pot_id, 'POT-', '') AS INTEGER) % 9 + 1),
+        CASE group_name
+          WHEN 'G0' THEN 100
+          WHEN 'G1' THEN 85
+          WHEN 'G2' THEN 70
+          ELSE 100
+        END,
+        substrate_mass_g, empty_pot_mass_g, saucer_mass_g, seed_count,
+        seeds_sown, seedlings_emerged, plants_retained, seed_mass_g,
+        initial_water_ml, initial_water_drained_ml, initial_assembled_mass_g,
+        mass_basis, sowing_date, sowing_status, emergence_status, emergence_date, notes, created_at, updated_at
+      FROM day0_pot_allocation;
+
+      DROP TABLE day0_pot_allocation;
+      ALTER TABLE day0_pot_allocation_new RENAME TO day0_pot_allocation;
+
+      -- Update day0_physical_config table - rename water volume fields
+      CREATE TABLE day0_physical_config_new (
+        config_id TEXT PRIMARY KEY,
+        camera_device TEXT,
+        camera_orientation TEXT,
+        camera_distance_cm REAL,
+        camera_angle_deg REAL,
+        lighting_config TEXT,
+        background TEXT,
+        image_resolution TEXT,
+        image_format TEXT,
+        capture_procedure TEXT,
+        calibration_ref_dimensions TEXT,
+        calibration_ref_placement TEXT,
+        pot_positioning TEXT,
+        rotation_procedure TEXT,
+        environmental_observations TEXT,
+        additional_notes TEXT,
+        pot_material TEXT,
+        pot_diameter_cm REAL,
+        pot_height_cm REAL,
+        pot_volume_l REAL,
+        pot_dimensions_basis TEXT CHECK (pot_dimensions_basis IN ('measured','manufacturer','unknown')),
+        planned_water_ml_g1 REAL,
+        planned_water_ml_g2 REAL,
+        planned_water_ml_g3 REAL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT
+      );
+
+      INSERT INTO day0_physical_config_new (
+        config_id, camera_device, camera_orientation, camera_distance_cm, camera_angle_deg,
+        lighting_config, background, image_resolution, image_format, capture_procedure,
+        calibration_ref_dimensions, calibration_ref_placement, pot_positioning, rotation_procedure,
+        environmental_observations, additional_notes, pot_material, pot_diameter_cm, pot_height_cm,
+        pot_volume_l, pot_dimensions_basis,
+        planned_water_ml_g1, planned_water_ml_g2, planned_water_ml_g3,
+        created_at, updated_at
+      )
+      SELECT
+        config_id, camera_device, camera_orientation, camera_distance_cm, camera_angle_deg,
+        lighting_config, background, image_resolution, image_format, capture_procedure,
+        calibration_ref_dimensions, calibration_ref_placement, pot_positioning, rotation_procedure,
+        environmental_observations, additional_notes, pot_material, pot_diameter_cm, pot_height_cm,
+        pot_volume_l, pot_dimensions_basis,
+        planned_water_ml_g0, planned_water_ml_g1, planned_water_ml_g2,
+        created_at, updated_at
+      FROM day0_physical_config;
+
+      DROP TABLE day0_physical_config;
+      ALTER TABLE day0_physical_config_new RENAME TO day0_physical_config;
+
+      PRAGMA foreign_keys = ON;
+    `);
+
+    db.prepare(
+      `
+        INSERT OR IGNORE INTO schema_migrations (version, applied_at)
+        VALUES (9, ?)
+      `
+    ).run(new Date().toISOString());
+  }
 }
