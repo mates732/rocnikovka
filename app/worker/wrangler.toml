@@ -1,0 +1,96 @@
+# Phytometer API — Cloudflare Worker
+#
+# FREE TIER: Cloudflare's Workers Paid plan is NOT required. The resources below
+# (Workers, D1, R2) all have free tiers. Verified against Cloudflare's published
+# limits (see README):
+#   Workers Free — 100,000 requests/day, 10 ms CPU/invocation, 128 MB memory,
+#                  50 subrequests per invocation
+#   D1 Free      — 5,000,000 rows read/day, 100,000 rows written/day,
+#                  5 GB total storage, 10 databases, 500 MB max DB size,
+#                  Time Travel 7 days, 50 queries per invocation
+#   R2 Free      — unlimited objects, 5 TiB max per object,
+#                  1 concurrent write per key per second
+#
+# Ample for 27 pots of metadata plus 28 days of daily photographs (~756 images).
+
+name = "phytometer-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# ---------------------------------------------------------------------------
+# PRODUCTION bindings — least privilege. The Worker only gets the two resources
+# it needs: D1 for experiment metadata, R2 for image bytes.
+#
+# These must never be changed without an explicit decision. The production D1
+# (phytometer-db) and R2 bucket (phytometer-images) hold the experiment record.
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "phytometer-db"
+# Produced by `npx wrangler d1 create phytometer-db`.
+# A D1 id is not a secret, but the binding must point at YOUR database.
+database_id = "8d5d92af-26be-4cea-bb28-e061004120b3"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "phytometer-images"
+
+# ---------------------------------------------------------------------------
+# Local development: `npm run dev` (wrangler dev) uses a local D1 and a local R2
+# simulator, so no Cloudflare account is required to develop.
+# ---------------------------------------------------------------------------
+
+[vars]
+# The single origin allowed to call the API from a browser. Kept restrictive:
+# any other Origin receives this value instead of itself. Note that CORS alone
+# is NOT authentication — the Worker is additionally protected by Cloudflare
+# Access (see README).
+ALLOWED_ORIGIN = "https://rocnikovka-ashy.vercel.app"
+
+# No secrets belong in [vars] — they are visible in the dashboard. The Worker
+# has no secrets: D1 and R2 are reached through bindings, not keys.
+
+# ---------------------------------------------------------------------------
+# TEST environment — fully isolated from production.
+#
+# Create it once with (see README "Test environment"):
+#   npx wrangler d1 create phytometer-db-test
+#   npx wrangler r2 bucket create phytometer-images-test
+#
+# Then paste the printed database_id below. Until then this id is a placeholder
+# and `--env test` will not deploy; local `wrangler dev --env test` still works
+# because it uses the local D1 simulator.
+#
+#   run tests against test:   wrangler dev --env test
+#   apply schema to test:     npx wrangler d1 migrations apply phytometer-db-test --env test
+# ---------------------------------------------------------------------------
+[env.test]
+  [[env.test.d1_databases]]
+  binding = "DB"
+  database_name = "phytometer-db-test"
+  database_id = "9f9e0d61-8fc2-4d46-8a10-a62111668569"
+
+  [[env.test.r2_buckets]]
+  binding = "IMAGES"
+  bucket_name = "phytometer-images-test"
+
+  [env.test.vars]
+  # Local Vite dev server, so the SPA can be exercised against the test Worker.
+  ALLOWED_ORIGIN = "http://localhost:5173"
+
+# ---------------------------------------------------------------------------
+# Cloudflare Access — local simulation only.
+#
+# This does NOT enable Access. It lets `wrangler dev` simulate an authenticated
+# identity so the credentialed-request code path can be tested locally without
+# a real login. Production Access is enabled in the dashboard; see README.
+#
+# `aud` is your Access application's audience tag (ctx.access.aud).
+# `identity.email` is the simulated signed-in user.
+# ---------------------------------------------------------------------------
+[access.dev]
+aud = "phytometer-api"
+
+  [access.dev.identity]
+  email = "student@example.com"

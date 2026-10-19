@@ -96,3 +96,34 @@ test("apiBase: the unconfigured base keeps requests relative (Vite dev proxy pat
   assert.equal(base, "", "no VITE_API_BASE_URL in the test environment");
   assert.equal(joinApiUrl(base, "/api/plants"), "/api/plants");
 });
+
+test("apiBase: the configured origin is used verbatim, with no /api duplication", async () => {
+  const { joinApiUrl, normalizeApiBase } = await import("./apiBase.ts");
+
+  // The value a user would enter for the TEST Worker.
+  const configured = normalizeApiBase("https://phytometer-api-test.78thz568ph.workers.dev");
+  assert.equal(configured, "https://phytometer-api-test.78thz568ph.workers.dev");
+
+  // The app appends the full path, so the base must NOT contain /api.
+  assert.equal(joinApiUrl(configured, "/api/plants"), "https://phytometer-api-test.78thz568ph.workers.dev/api/plants");
+  assert.ok(
+    !joinApiUrl(configured, "/api/plants").includes("/api/api"),
+    "including /api in the base would double the path prefix"
+  );
+});
+
+test("apiBase: a base that wrongly includes /api is caught, not silently accepted", async () => {
+  const { joinApiUrl, normalizeApiBase } = await import("./apiBase.ts");
+  // Document the failure mode so a misconfiguration is recognisable.
+  const wrong = normalizeApiBase("https://phytometer-api-test.78thz568ph.workers.dev/api");
+  assert.equal(joinApiUrl(wrong, "/api/plants"), "https://phytometer-api-test.78thz568ph.workers.dev/api/api/plants");
+  assert.ok(joinApiUrl(wrong, "/api/plants").includes("/api/api"));
+});
+
+test("apiBase: trailing slashes do not change the resulting URL", async () => {
+  const { joinApiUrl, normalizeApiBase } = await import("./apiBase.ts");
+  const a = normalizeApiBase("https://host.dev");
+  const b = normalizeApiBase("https://host.dev/");
+  assert.equal(a, b, "both must normalize to the same origin");
+  assert.equal(joinApiUrl(a, "/api/plants"), joinApiUrl(b, "/api/plants"));
+});

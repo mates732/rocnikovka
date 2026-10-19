@@ -4,6 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { ApiError } from "../services/apiError.ts";
 import {
+  HttpDay0EquipmentService,
   HttpImageService,
   HttpMeasurementService,
   HttpPlantService,
@@ -554,23 +555,6 @@ test("G) a 404 from the API surfaces as ApiError and is never treated as empty s
   }
 });
 
-test("H) Day 0 services resolve through the same apiUrl() helper", async () => {
-  const calls: string[] = [];
-  stubFetch((url) => {
-    calls.push(url);
-    return jsonResponse({ data: [] });
-  });
-  try {
-    const { HttpDay0EquipmentService, HttpDay0PotAllocationService } = await import("./adapters.ts");
-    await new HttpDay0EquipmentService().list();
-    await new HttpDay0PotAllocationService().list();
-  } finally {
-    restoreFetch();
-  }
-
-  assert.deepEqual(calls, ["/api/day0/equipment", "/api/day0/pot-allocation"]);
-});
-
 test("I) image upload targets the multipart endpoint via apiUrl()", async () => {
   const calls: string[] = [];
   stubFetch((url, init) => {
@@ -593,4 +577,107 @@ test("I) image upload targets the multipart endpoint via apiUrl()", async () => 
   }
 
   assert.deepEqual(calls, ["/api/images/upload"]);
+});
+
+test("H+J) Day 0 calls resolve through apiUrl and every call carries credentials", { concurrency: false }, async () => {
+  const seen: Array<{ url: string; credentials: string }> = [];
+  stubFetch((url, init) => {
+    seen.push({ url, credentials: String(init?.credentials ?? "omit") });
+    return jsonResponse({ data: [] });
+  });
+  try {
+    const p = new HttpPlantService();
+    await p.listPlants();
+    await p.getPlantById("PLT-001");
+    await p.getDayContext("PLT-001");
+    await p.createPlant({
+      plant_id: "PLT-001",
+      pot_id: "POT-001",
+      group_name: "G1",
+      emergence_date: "2026-01-01",
+      status: "active",
+      created_at: "2026-01-01T00:00:00",
+    });
+    await new HttpWaterService().listWaterEvents();
+    await new HttpWaterService().createWaterEvent(waterInput);
+    await new HttpPositionService().listPositionEvents();
+    await new HttpPositionService().createPositionEvent(positionInput);
+    await new HttpImageService().listImages();
+    await new HttpImageService().getImageById("IMG-1");
+    await new HttpMeasurementService().listManualMeasurements();
+    await new HttpMeasurementService().listAICVMeasurements();
+
+    const weekday = new HttpDay0EquipmentService();
+    await weekday.list();
+    // A PATCH — the credentialed write most easily missed.
+    await weekday.update("EQ-1", { verified: true });
+  } finally {
+    restoreFetch();
+  }
+
+  // URLs are built by apiUrl() with no base, i.e. unchanged relative paths.
+  const day0Urls = seen.filter((c) => c.url.startsWith("/api/day0/")).map((c) => c.url);
+  assert.deepEqual(day0Urls, ["/api/day0/equipment", "/api/day0/equipment/EQ-1"]);
+
+  // No call may omit credentials — the Access cookie would be dropped.
+  const omitting = seen.filter((c) => c.credentials !== "include");
+  assert.deepEqual(
+    omitting.map((c) => c.url),
+    [],
+    "no HTTP call may omit credentials"
+  );
+  assert.ok(seen.length >= 14, `expected many calls, got ${seen.length}`);
+});
+
+// ---------------------------------------------------------------------------
+// Cloudflare Access interaction: an unauthenticated request must fail loudly.
+//
+// When Access is enabled and no CF_Authorization cookie is present, Cloudflare
+// answers the request with a redirect to its login page. A browser fetch()
+// follows that redirect and receives HTML with a 200 status. The API layer must
+// therefore NOT treat that as a successful empty response — it has to surface an
+// error, otherwise the UI would silently show "no data" while the real problem
+// is "not signed in".
+// ---------------------------------------------------------------------------
+
+
+test("Access: a login-page redirect is an error, never an empty success", async () => {
+  // Cloudflare Access answers an unauthenticated request with a redirect to its
+  // login page. fetch() follows it, so the app receives HTML with status 200.
+  const loginPage = "<!DOCTYPE html><title>Cloudflare Access</title><form>login</form>";
+  stubFetch(() =>
+    new Response(loginPage, { status: 200, headers: { "content-type": "text/html" } })
+  );
+  try {
+    let caught: unknown;
+    try {
+      await new HttpPlantService().listPlants();
+    } catch (error) {
+      caught = error;
+    }
+    // It must be an ApiError, and it must say something actionable. A bare
+    // SyntaxError would leave the user unable to tell "not signed in" apart
+    // from "the API is broken".
+    assert.ok(caught instanceof ApiError, "a login page must become an ApiError");
+    assert.equal((caught as ApiError).code, "response.not_json");
+    assert.match((caught as ApiError).message, /not signed in/, "the message must point at sign-in");
+  } finally {
+    restoreFetch();
+  }
+});
+
+test("Access: a 401/302 from Access is surfaced with its status", async () => {
+  for (const status of [302, 401, 403]) {
+    stubFetch(() =>
+      new Response("{}", { status, headers: { "content-type": "application/json" } })
+    );
+    try {
+      await assert.rejects(
+        () => new HttpPlantService().listPlants(),
+        (error: unknown) => error instanceof ApiError && (error as ApiError).status === status
+      );
+    } finally {
+      restoreFetch();
+    }
+  }
 });

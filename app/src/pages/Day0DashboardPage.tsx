@@ -131,9 +131,9 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
       try {
         const [eq, pc, pa, md, pl] = await Promise.all([
           deps.day0EquipmentService.list(),
-          fetch(apiUrl("/api/day0/physical-config")).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => undefined),
-          fetch(apiUrl("/api/day0/pot-allocation")).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => []),
-          fetch(apiUrl("/api/day0/methodology-decisions")).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => []),
+          fetch(apiUrl("/api/day0/physical-config"), { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => undefined),
+          fetch(apiUrl("/api/day0/pot-allocation"), { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => []),
+          fetch(apiUrl("/api/day0/methodology-decisions"), { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data).catch(() => []),
           deps.plantService.listPlants().catch(() => []),
         ]);
         if (!cancelled) {
@@ -196,7 +196,7 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
         for (const item of equipmentItems) {
           posts.push(
             fetch(apiUrl("/api/day0/equipment"), {
-              method: "POST",
+          credentials: "include",              method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(item),
             })
@@ -207,7 +207,7 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
         for (const d of decisions) {
           posts.push(
             fetch(apiUrl("/api/day0/methodology-decisions"), {
-              method: "POST",
+          credentials: "include",              method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(d),
             })
@@ -219,7 +219,7 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
       // Refresh
       const [eq, md] = await Promise.all([
         deps.day0EquipmentService.list(),
-        fetch(apiUrl("/api/day0/methodology-decisions")).then((r) => r.json()).then((d) => d.data).catch(() => []),
+        fetch(apiUrl("/api/day0/methodology-decisions"), { credentials: "include" }).then((r) => r.json()).then((d) => d.data).catch(() => []),
       ]);
       setEquipment(eq);
       setMethodologyDecisions(md);

@@ -39,20 +39,16 @@ returns 404.
 is not an empty database, and the app reports it as an error rather than
 pretending the lists are empty.
 
-## Why the backend is not deployed here
+## The fix in this repository
 
-The backend needs a **persistent writable filesystem**:
+Two things are now in place:
 
-- `better-sqlite3` opens a single SQLite file at
-  `app/server/server/storage/experiment.sqlite`
-- uploaded photographs are written to `app/server/server/storage/images/`
-
-Vercel serverless functions have an ephemeral, read-only filesystem. Running
-SQLite or storing images there would silently lose experiment data (records and
-photographs would disappear between invocations). Therefore this repository
-deliberately does **not** fake a serverless backend, does **not** switch to
-Supabase, and does **not** mock the API. The honest failure is a 404 that the UI
-reports.
+1. **A Cloudflare Worker backend** in `app/worker` (D1 + R2), implementing the
+   same API with the same validation and append-only rules. See
+   `app/worker/README.md` for how to create the resources, apply the schema,
+   deploy, verify persistence, migrate the existing SQLite data, and roll back.
+2. **A configurable API base** so the frontend can point at it, plus a
+   `vercel.json` SPA rewrite so deep links load.
 
 ## The two parts of the fix applied in this repository
 
@@ -81,37 +77,46 @@ rewrite, so an API miss keeps returning a genuine 404 rather than HTML with a
 
 ## What is still required (external action)
 
-1. **Deploy the backend** somewhere with a persistent disk, for example a small
-   VPS, or Railway / Render / Fly.io with a mounted volume. Run from `app/server`:
-
-   ```bash
-   npm install
-   npm run build      # tsc -p tsconfig.json
-   npm run db:init    # starts the server, applies migrations, seeds nothing
-   ```
-
-   The port comes from the server's own configuration (`PORT`, default 3001).
-
-2. **Point the frontend at it** by setting the build-time environment variable
-   in the Vercel project:
-
-   | Variable | Example |
-   |---|---|
-   | `VITE_API_BASE_URL` | `https://api.your-domain.com` |
-
-   No trailing slash and no `/api` suffix — the app appends `/api/...` itself.
-   Because the value is **inlined at build time**, the frontend must be
+1. **Create the Cloudflare resources** (D1 database + R2 bucket) — see
+   `app/worker/README.md` step 1.
+2. **Deploy the Worker** — `app/worker` step 5. This is an action only you can
+   perform; it cannot be done from this repository.
+3. **Migrate the existing SQLite data and images** into D1/R2 with the explicit
+   command in `app/worker/README.md` step 6. It is never run by a deploy.
+4. **Set `VITE_API_BASE_URL`** to the deployed Worker origin in the Vercel
+   project. The value is **inlined at build time**, so the frontend must be
    **redeployed** after changing it.
 
-3. **Verify** the backend first, independent of the frontend:
+| Variable | Example |
+|---|---|
+| `VITE_API_BASE_URL` | `https://phytometer-api.your-subdomain.workers.dev` |
+
+No trailing slash and no `/api` path prefix — the app appends `/api/...` itself.
+
+5. **Verify** the Worker first, independent of the frontend:
 
    ```bash
-   curl -i https://api.your-domain.com/api/plants
+   curl -i https://phytometer-api.your-subdomain.workers.dev/api/plants
    # expect HTTP 200 and {"data":[...]}
    ```
 
-   Then open the frontend and confirm the Overview and Day 0 pages show real
-   counts instead of the error state.
+   A 200 from `/api/health` only proves the Worker runs; follow the persistence
+   check in `app/worker/README.md` step 8 before treating it as trustworthy.
+
+Then open the frontend and confirm the Overview and Day 0 pages show real
+counts instead of the error state.
+
+## Fallback: keep the Node backend
+
+The Node backend in `app/server` is unchanged and still works locally with
+
+```bash
+cd app/server && npm run db:init
+```
+
+If you prefer to host it on a persistent VPS instead of using Cloudflare,
+set `VITE_API_BASE_URL` to that origin and redeploy the frontend. The Worker
+exists so that free, durable hosting is possible without a paid VPS.
 
 ## Local development (unchanged)
 

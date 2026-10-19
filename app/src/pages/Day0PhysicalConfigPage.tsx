@@ -36,9 +36,13 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
     rotation_procedure: "",
     environmental_observations: "",
     additional_notes: "",
+    pot_material: "",
   });
   const [distanceStr, setDistanceStr] = useState<string>("");
   const [angleStr, setAngleStr] = useState<string>("");
+  const [potDiameterStr, setPotDiameterStr] = useState<string>("");
+  const [potHeightStr, setPotHeightStr] = useState<string>("");
+  const [potVolumeStr, setPotVolumeStr] = useState<string>("");
   const [plannedWater, setPlannedWater] = useState<{ G0: string; G1: string; G2: string }>({
     G0: "",
     G1: "",
@@ -52,7 +56,7 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(apiUrl("/api/day0/physical-config"));
+        const res = await fetch(apiUrl("/api/day0/physical-config"), { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           if (!cancelled) setConfig(data.data);
@@ -90,9 +94,13 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
       rotation_procedure: cfg.rotation_procedure ?? "",
       environmental_observations: cfg.environmental_observations ?? "",
       additional_notes: cfg.additional_notes ?? "",
+      pot_material: cfg.pot_material ?? "",
     });
     setDistanceStr(cfg.camera_distance_cm != null ? String(cfg.camera_distance_cm) : "");
     setAngleStr(cfg.camera_angle_deg != null ? String(cfg.camera_angle_deg) : "");
+    setPotDiameterStr(cfg.pot_diameter_cm != null ? String(cfg.pot_diameter_cm) : "");
+    setPotHeightStr(cfg.pot_height_cm != null ? String(cfg.pot_height_cm) : "");
+    setPotVolumeStr(cfg.pot_volume_l != null ? String(cfg.pot_volume_l) : "");
     setPlannedWater({
       G0: cfg.planned_water_ml_g0 != null ? String(cfg.planned_water_ml_g0) : "",
       G1: cfg.planned_water_ml_g1 != null ? String(cfg.planned_water_ml_g1) : "",
@@ -128,6 +136,11 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
       rotation_procedure: formValues.rotation_procedure?.trim() || undefined,
       environmental_observations: formValues.environmental_observations?.trim() || undefined,
       additional_notes: formValues.additional_notes?.trim() || undefined,
+      pot_material: formValues.pot_material?.trim() || undefined,
+      pot_diameter_cm: potDiameterStr.trim() === "" ? undefined : Number(potDiameterStr),
+      pot_height_cm: potHeightStr.trim() === "" ? undefined : Number(potHeightStr),
+      pot_volume_l: potVolumeStr.trim() === "" ? undefined : Number(potVolumeStr),
+      pot_dimensions_basis: (formValues.pot_dimensions_basis || undefined) as Day0PhysicalConfig["pot_dimensions_basis"],
       updated_at: now,
     };
 
@@ -142,7 +155,7 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
         } as Day0PhysicalConfig);
       }
       // Refresh
-      const res = await fetch(apiUrl("/api/day0/physical-config"));
+      const res = await fetch(apiUrl("/api/day0/physical-config"), { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setConfig(data.data);
@@ -316,6 +329,80 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
               Skutečnou zálivku zaznamenávejte strání Zálivka. Gravimetrický základ zůstává otevřeným
               metodologickým rozhodnutím do ověření proti uzamčenému protokolu.
             </p>
+          </div>
+
+          <div className="form-field-group span-2" role="group" aria-labelledby="pot-dims-heading">
+            <span className="form-label" id="pot-dims-heading">Fyzické parametry květináče (řízené proměnné)</span>
+            <div className="form-grid">
+              <label className="form-field" htmlFor="cfg-pot-material">
+                <span className="form-label">Materiál</span>
+                <input
+                  id="cfg-pot-material"
+                  type="text"
+                  value={formValues.pot_material ?? ""}
+                  onChange={(e) => handleChange("pot_material", e.target.value)}
+                  placeholder="plast"
+                  disabled={submitting}
+                />
+              </label>
+
+              <label className="form-field" htmlFor="cfg-pot-diameter">
+                <span className="form-label">Průměr (cm)</span>
+                <input
+                  id="cfg-pot-diameter"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={potDiameterStr}
+                  onChange={(e) => { setPotDiameterStr(e.target.value); setSaved(false); }}
+                  disabled={submitting}
+                />
+              </label>
+
+              <label className="form-field" htmlFor="cfg-pot-height">
+                <span className="form-label">Výška (cm)</span>
+                <input
+                  id="cfg-pot-height"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={potHeightStr}
+                  onChange={(e) => { setPotHeightStr(e.target.value); setSaved(false); }}
+                  disabled={submitting}
+                />
+              </label>
+
+              <label className="form-field" htmlFor="cfg-pot-volume">
+                <span className="form-label">Objem (l)</span>
+                <input
+                  id="cfg-pot-volume"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={potVolumeStr}
+                  onChange={(e) => { setPotVolumeStr(e.target.value); setSaved(false); }}
+                  disabled={submitting}
+                />
+              </label>
+
+              <label className="form-field span-2" htmlFor="cfg-pot-basis">
+                <span className="form-label">Odak jsou tyto údaje?</span>
+                <select
+                  id="cfg-pot-basis"
+                  value={formValues.pot_dimensions_basis ?? "unknown"}
+                  onChange={(e) => { handleChange("pot_dimensions_basis", e.target.value); setSaved(false); }}
+                  disabled={submitting}
+                >
+                  <option value="unknown">Nezadáno</option>
+                  <option value="measured">Změřeno mnou</option>
+                  <option value="manufacturer">Údaj výrobce / přibližný</option>
+                </select>
+                <span className="form-hint">
+                  Rozdíl je důležitý: hodnota „Změřeno" je důkaz, „přibližný" jen orientační.
+                  Pole nechte prázdná, pokud hodnotu neznáte — nedoplňuje se automaticky.
+                </span>
+              </label>
+            </div>
           </div>
 
           <label className="form-field span-2" htmlFor="cfg-additional-notes">

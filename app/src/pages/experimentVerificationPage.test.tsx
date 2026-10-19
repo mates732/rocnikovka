@@ -385,3 +385,104 @@ test("T) accessibility: the day input has a visible label and the grid has acces
   const sections = renderer.root.findAll((n) => n.type === "section" && n.props["aria-label"]);
   assert.ok(sections.some((s) => String(s.props["aria-label"]).includes("Completeness")), "completeness section has accessible name");
 });
+// ---------------------------------------------------------------------------
+// Emergence-aware expectations (Day 1 readiness)
+//
+// A plant that has not emerged must NOT be reported as "missing an image" or
+// "missing a measurement". Before emergence there is genuinely nothing to
+// observe, so the honest state is "not applicable", not "missing".
+// ---------------------------------------------------------------------------
+
+function plantWith(over: Partial<{ plant_id: string; emergence_status: import("../types/entities").EmergenceStatus }>) {
+  return { plant_id: "PLT-010", pot_id: "POT-010", group_name: "G1", emergence_date: "2026-02-01", status: "active", ...over };
+}
+
+test("O) a plant that has not emerged is not_applicable, not missing", () => {
+  const result = computeCompleteness(
+    [plantWith({ emergence_status: "awaiting" })],
+    [], [], [], [], 1
+  );
+  const row = result.plants[0];
+  assert.equal(row.expectation, "not_emerged");
+  assert.equal(row.image, "not_applicable", "no image is expected before emergence");
+  assert.equal(row.water, "not_applicable");
+  assert.equal(row.emergence_recorded, true);
+  assert.ok(
+    !row.attention.some((a) => /^No image recorded/.test(a)),
+    "a pre-emergence plant must not be told it is missing an image"
+  );
+  assert.ok(
+    !row.attention.some((a) => /^No manual reference/.test(a)),
+    "a pre-emergence plant must not be told it is missing a measurement"
+  );
+});
+
+test("P) an emerged plant still reports real missing records", () => {
+  const result = computeCompleteness(
+    [plantWith({ emergence_status: "emerged" })],
+    [], [], [], [], 1
+  );
+  const row = result.plants[0];
+  assert.equal(row.expectation, "expected");
+  assert.equal(row.image, "missing", "an emerged plant with no image IS a deficiency");
+  assert.equal(row.water, "missing");
+  assert.ok(row.attention.some((a) => /^No image recorded/.test(a)));
+  assert.ok(row.attention.some((a) => /^No manual reference/.test(a)));
+  assert.ok(row.attention.some((a) => /Manual repetition 1 is missing/.test(a)));
+  assert.ok(row.attention.some((a) => /Manual repetition 2 is missing/.test(a)));
+});
+
+test("Q) a failed pot expects nothing further", () => {
+  const result = computeCompleteness(
+    [plantWith({ emergence_status: "failed" })],
+    [], [], [], [], 1
+  );
+  const row = result.plants[0];
+  assert.equal(row.expectation, "failed");
+  assert.equal(row.image, "not_applicable");
+  assert.ok(row.attention.some((a) => /neklíčil/.test(a)), "the reason must be stated");
+});
+
+test("R) a plant with a recorded emergence_date but no status is treated as emerged", () => {
+  // Registration requires an emergence_date, so it is itself evidence of
+  // emergence. Backward compatibility with existing records depends on this.
+  const result = computeCompleteness([plantWith({})], [], [], [], [], 1);
+  const row = result.plants[0];
+  assert.equal(row.expectation, "expected");
+  assert.equal(row.image, "missing");
+});
+
+test("S) a plant with neither status nor date is unknown and invents no requirement", () => {
+  const result = computeCompleteness(
+    [{ plant_id: "PLT-011", pot_id: "POT-011", group_name: "G0", emergence_date: "", status: "active" }],
+    [], [], [], [], 1
+  );
+  const row = result.plants[0];
+  assert.equal(row.expectation, "unknown");
+  assert.equal(row.emergence_recorded, false);
+  assert.equal(row.image, "not_applicable");
+  assert.ok(row.attention.some((a) => /Stav emergence není zaznamenán/.test(a)));
+});
+
+test("T) an emerged plant with records shows them as present", () => {
+  const image = {
+    image_id: "IMG-1", plant_id: "PLT-010", timestamp: "2026-02-01T08:00:00", experiment_day: 1,
+    image_path: "images/IMG-1.jpg", camera_id: "CAM-01", image_quality_status: "PASS" as const,
+    calibration_status: "pass" as const,
+  };
+  const measurement = {
+    measurement_id: "MSR-1", plant_id: "PLT-010", timestamp: "2026-02-01T08:00:00", experiment_day: 1,
+    repetition: 1 as const, observer: "M. Vojan", measurement_status: "pass" as const,
+    plant_height_cm: 12.4, method: "MANUAL" as const,
+  };
+  const result = computeCompleteness(
+    [plantWith({ emergence_status: "emerged" })],
+    [image], [measurement], [], [], 1
+  );
+  const row = result.plants[0];
+  assert.equal(row.image, "present");
+  assert.equal(row.image_count, 1);
+  assert.equal(row.manual, "pass");
+  assert.equal(row.manual_repetition_1, true);
+  assert.equal(row.manual_repetition_2, false, "repetition 2 is genuinely still missing");
+});

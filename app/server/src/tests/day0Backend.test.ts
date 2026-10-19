@@ -534,6 +534,47 @@ test("Day 0: negative seed and mass counts are rejected", async () => {
   });
 });
 
+test("Day 0: an approved methodology decision requires an approver and a date", async () => {
+  await withTestServer(async (baseUrl) => {
+    // Approval with no attribution must be refused — the register may never
+    // claim someone approved a change they did not approve.
+    const noApprover = await postJson(baseUrl, "/api/day0/methodology-decisions", {
+      decision_id: testIds("methodology attribution").decisionId,
+      title: "Sample size amendment",
+      description: "27 pots vs the protocol's 45.",
+      status: "approved",
+      created_at: "2026-02-01T08:00:00",
+    });
+    assert.equal(noApprover.status, 400);
+
+    const noDate = await postJson(baseUrl, "/api/day0/methodology-decisions", {
+      decision_id: `${testIds("methodology attribution 2").decisionId}`,
+      title: "Sample size amendment",
+      description: "27 pots vs the protocol's 45.",
+      status: "approved",
+      decided_by: "M. Vojan",
+      created_at: "2026-02-01T08:00:00",
+    });
+    assert.equal(noDate.status, 400);
+
+    const attributed = await postJson(baseUrl, "/api/day0/methodology-decisions", {
+      decision_id: `${testIds("methodology attribution 3").decisionId}`,
+      title: "Sample size amendment",
+      description: "27 pots vs the protocol's 45.",
+      status: "approved",
+      decided_by: "M. Vojan",
+      decided_at: "2026-02-01T09:00:00",
+      blocks_sowing: false,
+      blocks_emergence: false,
+      blocks_measurements: false,
+      created_at: "2026-02-01T08:00:00",
+    });
+    assert.equal(attributed.status, 201);
+    assert.equal(attributed.body.data.decided_by, "M. Vojan");
+    assert.equal(attributed.body.data.decided_at, "2026-02-01T09:00:00");
+  });
+});
+
 test("Day 0: methodology decisions default to unresolved, never approved", async () => {
   await withTestServer(async (baseUrl) => {
     const { decisionId } = testIds("methodology decision");

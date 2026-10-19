@@ -578,6 +578,25 @@ export function validateDay0PhysicalConfig(input: Day0PhysicalConfig): Validatio
   if (input.camera_distance_cm != null && (typeof input.camera_distance_cm !== "number" || input.camera_distance_cm < 0)) {
     issues.push(issue("day0_physical_config", input.config_id, "camera_distance_cm", "number.out_of_range", "Must be number >= 0"));
   }
+  // Pot physical constants: positive numbers only, and the basis must state how
+  // they were obtained so a label value is not treated as a measurement.
+  for (const field of ["pot_diameter_cm", "pot_height_cm", "pot_volume_l"] as const) {
+    const value = input[field];
+    if (value != null && (typeof value !== "number" || value < 0)) {
+      issues.push(issue("day0_physical_config", input.config_id, field, "number.out_of_range", "Must be number >= 0"));
+    }
+  }
+  if (input.pot_dimensions_basis != null) {
+    issues.push(
+      ...validateEnum(
+        "day0_physical_config",
+        input.config_id,
+        "pot_dimensions_basis",
+        input.pot_dimensions_basis,
+        ["measured", "manufacturer", "unknown"]
+      )
+    );
+  }
   if (input.camera_angle_deg != null && (typeof input.camera_angle_deg !== "number" || input.camera_angle_deg < 0 || input.camera_angle_deg > 360)) {
     issues.push(issue("day0_physical_config", input.config_id, "camera_angle_deg", "number.out_of_range", "Must be number 0..360"));
   }
@@ -677,6 +696,33 @@ export function validateDay0MethodologyDecision(input: Day0MethodologyDecision):
   }
   if (typeof input.blocks_measurements !== "boolean") {
     issues.push(issue("day0_methodology_decision", input.decision_id, "blocks_measurements", "type.mismatch", "Must be boolean"));
+  }
+  // Attribution guard: an approval must name who decided it and when. Without
+  // this the register could claim a supervisor approved a change that nobody
+  // approved, which would falsify the experiment's amendment history.
+  if (input.status === "approved") {
+    if (typeof input.decided_by !== "string" || input.decided_by.trim() === "") {
+      issues.push(
+        issue(
+          "day0_methodology_decision",
+          input.decision_id,
+          "decided_by",
+          "required",
+          "An approved decision must record who approved it"
+        )
+      );
+    }
+    if (typeof input.decided_at !== "string" || input.decided_at.trim() === "") {
+      issues.push(
+        issue(
+          "day0_methodology_decision",
+          input.decision_id,
+          "decided_at",
+          "required",
+          "An approved decision must record when it was approved"
+        )
+      );
+    }
   }
 
   return { valid: issues.length === 0, issues };

@@ -3630,3 +3630,47 @@ h1, h2, h3 {
   font-size: var(--fs-xs);
   color: var(--text-secondary);
 }
+
+/* Three-way presence: recorded / genuinely missing / not applicable */
+.verdict-na {
+  color: var(--text-faint);
+  border-color: var(--border);
+  background: var(--surface-muted);
+  font-style: italic;
+}
+
+/* Emergence expectation badge on the specimen cell */
+.expectation-badge {
+  display: inline-block;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-faint);
+  background: var(--surface-muted);
+}
+
+.expectation-failed {
+  color: var(--status-fail);
+  border-color: color-mix(in srgb, var(--status-fail) 30%, var(--border));
+  background: var(--status-fail-bg);
+}
+
+.expectation-unknown {
+  color: var(--status-warn);
+  border-color: color-mix(in srgb, var(--status-warn) 30%, var(--border));
+  background: var(--status-warn-bg);
+}
+
+/* Day 0 checklist states: pending / done / needs decision */
+.checklist-item[data-state="done"] .checklist-label {
+  color: var(--text-faint);
+  text-decoration: line-through;
+}
+
+.checklist-item[data-state="decision"] .checklist-label {
+  color: var(--status-warn);
+}

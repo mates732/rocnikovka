@@ -24,7 +24,7 @@ export function Day0MethodologyPage({ services: deps = services }: Day0Methodolo
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(apiUrl("/api/day0/methodology-decisions"));
+        const res = await fetch(apiUrl("/api/day0/methodology-decisions"), { credentials: "include" });
         if (res.ok) {
           const data = await res.json();
           if (!cancelled) setDecisions(data.data);

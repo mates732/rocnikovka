@@ -141,6 +141,15 @@ export interface Day0Equipment {
 export interface Day0PhysicalConfig {
   config_id: string;
   camera_device?: string;
+  /**
+   * Pot physical constants — controlled variables, not measurements taken
+   * during the experiment. Nullable: nothing is pre-filled.
+   */
+  pot_material?: string;
+  pot_diameter_cm?: number;
+  pot_height_cm?: number;
+  pot_volume_l?: number;
+  pot_dimensions_basis?: "measured" | "manufacturer" | "unknown";
   camera_orientation?: string;
   camera_distance_cm?: number;
   camera_angle_deg?: number;

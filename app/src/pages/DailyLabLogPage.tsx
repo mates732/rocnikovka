@@ -20,6 +20,32 @@ type DailyLabLogProps = { services?: DailyLabLogDeps };
 
 const PROTOCOL_GROUPS = ["G0", "G1", "G2"] as const;
 
+/** Renders a three-way presence state: recorded / genuinely missing / not applicable. */
+function PresenceCell({ state, count }: { state: "present" | "missing" | "not_applicable"; count?: number }) {
+  if (state === "present") {
+    return (
+      <span className="verdict verdict-pass">
+        <span className="verdict-mark" aria-hidden="true">✓</span>
+        {count !== undefined && count > 1 ? `Present (${count})` : "Present"}
+      </span>
+    );
+  }
+  if (state === "not_applicable") {
+    return (
+      <span className="verdict verdict-na" title="Není vyžadováno — rostlina dosud nevzešla nebo květináč neklíčil">
+        <span className="verdict-mark" aria-hidden="true">–</span>
+        Není vyžadováno
+      </span>
+    );
+  }
+  return (
+    <span className="verdict verdict-missing">
+      <span className="verdict-mark" aria-hidden="true">✗</span>
+      Missing
+    </span>
+  );
+}
+
 export default function DailyLabLogPage({ services: deps = services }: DailyLabLogProps = {}) {
   const [day, setDay] = useState("");
   const [plants, setPlants] = useState<Plant[]>([]);
@@ -247,19 +273,16 @@ export default function DailyLabLogPage({ services: deps = services }: DailyLabL
                                 {row.plant_id}
                               </Link>
                               <span className="cell-sub">pot {row.pot_id}</span>
-                            </td>
-                            <td>
-                              {row.image === "present" ? (
-                                <span className="verdict verdict-pass">
-                                  <span className="verdict-mark" aria-hidden="true">✓</span>
-                                  {row.image_count > 1 ? `Present (${row.image_count})` : "Present"}
-                                </span>
-                              ) : (
-                                <span className="verdict verdict-missing">
-                                  <span className="verdict-mark" aria-hidden="true">✗</span>
-                                  Missing
+                              {row.expectation !== "expected" && (
+                                <span className={`expectation-badge expectation-${row.expectation}`}>
+                                  {row.expectation === "not_emerged" && "dosud nevzešlo"}
+                                  {row.expectation === "failed" && "neklíčilo"}
+                                  {row.expectation === "unknown" && "stav emergence neznámý"}
                                 </span>
                               )}
+                            </td>
+                            <td>
+                              <PresenceCell state={row.image} count={row.image_count} />
                             </td>
                             <td>
                               {row.manual === "missing" ? (
@@ -289,17 +312,7 @@ export default function DailyLabLogPage({ services: deps = services }: DailyLabL
                               </span>
                             </td>
                             <td>
-                              {row.water === "present" ? (
-                                <span className="verdict verdict-pass">
-                                  <span className="verdict-mark" aria-hidden="true">✓</span>
-                                  Watered
-                                </span>
-                              ) : (
-                                <span className="verdict verdict-missing">
-                                  <span className="verdict-mark" aria-hidden="true">✗</span>
-                                  Missing
-                                </span>
-                              )}
+                              <PresenceCell state={row.water} />
                             </td>
                             <td>
                               {row.attention.length === 0 ? (

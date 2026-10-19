@@ -1,0 +1,96 @@
+# Phytometer — SAME-ORIGIN TEST APP (Cloudflare Workers Static Assets)
+#
+# PURPOSE
+#   Serves the Vite frontend and the existing API from ONE origin, so the
+#   Cloudflare Access session cookie is FIRST-PARTY. That removes the
+#   third-party-cookie dependency that makes the Vercel → workers.dev split
+#   unreliable in Safari.
+#
+# SAFETY
+#   - This is a NEW Worker (`phytometer-app-test`). The existing
+#     `phytometer-api-test` and the PRODUCTION `phytometer-api` are untouched.
+#   - It binds ONLY the TEST D1 and TEST R2.
+#   - Nothing here deploys by itself; deployment is an explicit manual step.
+#   - `npm run dev` (wrangler dev) exercises this locally with local D1/R2.
+#
+# SAME CODE, SAME CONTRACTS
+#   The API is the exact same `src/index.ts` router — no routes, response
+#   shapes, validation or append-only rules differ from the API-only Worker.
+
+name = "phytometer-app-test"
+main = "src/index.ts"
+compatibility_date = "2025-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# ---------------------------------------------------------------------------
+# STATIC ASSETS — the Vite build, served from this same origin.
+#
+# `../dist` is relative to THIS file (app/worker/), so it resolves to app/dist,
+#
+# NOTE: This file lives at the repo root, not inside app/worker. All paths in
+# this file are therefore evaluated relative to the repo root, not to
+# app/worker/. Verify that before deploying from a different working directory.
+# which is Vite's default output directory. Verified: `wrangler deploy
+# --dry-run` reads 4 files from it.
+#
+# `not_found_handling = "single-page-application"` makes any unmatched path
+# return index.html with 200, which is what React Router deep links need
+# (e.g. /experiment/day0 opened directly).
+#
+# `run_worker_first = true` sends EVERY request to the Worker first; the entry
+# point then delegates non-API paths to the asset router. This is the
+# SECURITY-CRITICAL setting, and it is done in code rather than via a path
+# pattern on purpose: verified locally, `run_worker_first = true` still lets
+# a static file at `dist/api/<name>` be served, which would bypass API
+# protection entirely. With `true`, an /api/* path can only ever be answered by
+# the router. See src/index.ts.
+# ---------------------------------------------------------------------------
+[assets]
+directory = "../dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+# ---------------------------------------------------------------------------
+# TEST bindings only. Never point this at production resources.
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "phytometer-db-test"
+database_id = "9f9e0d61-8fc2-4d46-8a10-a62111668569"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "phytometer-images-test"
+
+# ---------------------------------------------------------------------------
+# FAIL-CLOSED GUARD CONFIGURATION (test app only)
+# ---------------------------------------------------------------------------
+# The same-origin test app verifies the Cloudflare Access JWT in code. It does
+# NOT trust any client-supplied header or cookie. When these two vars are set,
+# anonymous requests are refused with 401/403 before any route, asset or data
+# operation is reached.
+#
+# These are identifiers, not secrets. They belong in [vars] and are shipped only
+# with the test Worker config. They must be filled in before deployment.
+#
+# Do NOT copy this block into production wrangler.toml.
+
+[vars]
+# Not used for same-origin requests (the frontend calls relative /api paths),
+# but kept explicit so a misconfiguration is visible rather than silent.
+ALLOWED_ORIGIN = "https://phytometer-app-test.78thz568ph.workers.dev"
+
+# Required for the fail-closed guard in the deployed test app.
+# Fill these in before deploying and verify anonymous access is blocked.
+REQUIRE_ACCESS_TEAM_DOMAIN = "https://royal-recipe-fc82.cloudflareaccess.com"
+REQUIRE_ACCESS_AUD = "REPLACE_WITH_ACCESS_APPLICATION_AUD"
+
+# ---------------------------------------------------------------------------
+# LOCAL ACCESS SIMULATION (wrangler dev only; does NOT enable Access)
+# ---------------------------------------------------------------------------
+[access.dev]
+aud = "phytometer-app-test"
+
+  [access.dev.identity]
+  email = "student@example.com"

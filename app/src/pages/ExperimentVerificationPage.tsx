@@ -21,7 +21,23 @@ import type { AICVMeasurement, ImageRecord, ManualMeasurement, Plant, WaterEvent
 // ============================================================================
 
 export type ManualStatus = "pass" | "warn" | "fail" | "missing";
-export type Presence = "present" | "missing";
+export type Presence = "present" | "missing" | "not_applicable";
+
+/**
+ * Whether a plant is expected to produce observations for a given experiment day.
+ *
+ *   expected     — the plant has emerged, so a daily record IS required
+ *   not_emerged  — emergence has not been observed yet, so biological
+ *                  observations are NOT yet required (this is NOT "missing")
+ *   failed       — the pot failed to emerge; nothing further is expected
+ *   unknown      — emergence state was never recorded, so no requirement is
+ *                  invented. The operator is told to record it.
+ *
+ * This distinction is the point: a plant that has not emerged must never be
+ * reported as "missing an image" or "missing a measurement". That would turn a
+ * legitimate "nothing to observe yet" into a false data-quality problem.
+ */
+export type ObservationExpectation = "expected" | "not_emerged" | "failed" | "unknown";
 
 export type PlantDayCompleteness = {
   plant_id: string;
@@ -33,6 +49,13 @@ export type PlantDayCompleteness = {
   manual_repetition_2: boolean;
   manual_attempts: number;
   water: Presence;
+  /**
+   * Whether daily observations are applicable for this plant on this day.
+   * `expected` is the only state in which "missing" is a real deficiency.
+   */
+  expectation: ObservationExpectation;
+  /** True when the `expectation` came from a recorded emergence status. */
+  emergence_recorded: boolean;
   /** Human-readable reasons why this plant/day needs attention. */
   attention: string[];
 };
@@ -75,6 +98,45 @@ export function computeCompleteness(
   const plantSet = new Set(plants.map((p) => p.plant_id));
 
   const plantRows = plants.map((plant) => {
+    // ---- Is this plant expected to be observed on this experiment day? ----
+    // Read only from recorded state. Nothing is inferred from timestamps, the
+    // current date, or the selected day number.
+    //
+    // Precedence, most authoritative first:
+    //   1. An explicit `emergence_status` always wins. "awaiting" / "sown" /
+    //      "not_sown" / "uncertain" means emergence has NOT been observed, even
+    //      if some date value is present; "failed" means the pot is dead;
+    //      "emerged" means observations are required.
+    //   2. With no status at all, a recorded `emergence_date` is evidence that
+    //      emergence happened (registration requires that date), so the plant is
+    //      treated as emerged.
+    //   3. With neither, the requirement is genuinely unknown and nothing is
+    //      invented.
+    const recordedStatus = plant.emergence_status;
+    const hasEmergenceDate =
+      typeof plant.emergence_date === "string" && plant.emergence_date.trim() !== "";
+
+    let expectation: ObservationExpectation;
+    let emergenceRecorded: boolean;
+
+    if (recordedStatus === undefined || recordedStatus === null) {
+      emergenceRecorded = hasEmergenceDate;
+      expectation = hasEmergenceDate ? "expected" : "unknown";
+    } else {
+      emergenceRecorded = true;
+      if (recordedStatus === "emerged") {
+        expectation = "expected";
+      } else if (recordedStatus === "failed") {
+        expectation = "failed";
+      } else {
+        // not_sown / sown / awaiting / uncertain — emergence not observed.
+        expectation = "not_emerged";
+      }
+    }
+
+    // Observations are only *required* when the plant has actually emerged.
+    const observationsApplicable = expectation === "expected";
+
     const plantImages = images.filter((img) => img.plant_id === plant.plant_id && img.experiment_day === day);
     const plantManual = manual.filter((m) => m.plant_id === plant.plant_id && m.experiment_day === day);
     const plantWater = water.filter((w) => w.plant_id === plant.plant_id && w.experiment_day === day);
@@ -86,23 +148,47 @@ export function computeCompleteness(
     else if (statuses.includes("fail")) manualStatus = "fail";
 
     const attention: string[] = [];
-    if (plantImages.length === 0) attention.push("No image recorded for this day.");
-    if (plantManual.length === 0) attention.push("No manual reference measurement recorded for this day.");
-    if (manualStatus === "fail") attention.push("Manual measurement exists but FAILED (failure preserved as historical record).");
-    if (manualStatus === "warn") attention.push("Manual measurement exists with WARN status.");
-    if (!plantManual.some((m) => m.repetition === 1)) attention.push("Manual repetition 1 is missing.");
-    if (!plantManual.some((m) => m.repetition === 2)) attention.push("Manual repetition 2 is missing.");
+
+    if (expectation === "unknown") {
+      attention.push(
+        "Stav emergence není zaznamenán — nelze posoudit, zda je pro tento den záznam vyžadován."
+      );
+    }
+    if (expectation === "not_emerged") {
+      attention.push("Rostlina dosud nevzešla — biologické pozorování pro tento den není vyžadováno.");
+    }
+    if (expectation === "failed") {
+      attention.push("Květináč neklíčil — další pozorování se neočekávají.");
+    }
+
+    // "Missing" is only a deficiency when the plant has actually emerged.
+    if (observationsApplicable) {
+      if (plantImages.length === 0) attention.push("No image recorded for this day.");
+      if (plantManual.length === 0) attention.push("No manual reference measurement recorded for this day.");
+      if (manualStatus === "fail") attention.push("Manual measurement exists but FAILED (failure preserved as historical record).");
+      if (manualStatus === "warn") attention.push("Manual measurement exists with WARN status.");
+      if (!plantManual.some((m) => m.repetition === 1)) attention.push("Manual repetition 1 is missing.");
+      if (!plantManual.some((m) => m.repetition === 2)) attention.push("Manual repetition 2 is missing.");
+      if (plantWater.length === 0) attention.push("No watering record for this day.");
+    }
+
+    const presence = (present: boolean): Presence => {
+      if (present) return "present";
+      return observationsApplicable ? "missing" : "not_applicable";
+    };
 
     return {
       plant_id: plant.plant_id,
       pot_id: plant.pot_id,
-      image: plantImages.length > 0 ? ("present" as const) : ("missing" as const),
+      image: presence(plantImages.length > 0),
       image_count: plantImages.length,
       manual: manualStatus,
       manual_repetition_1: plantManual.some((m) => m.repetition === 1),
       manual_repetition_2: plantManual.some((m) => m.repetition === 2),
       manual_attempts: plantManual.length,
-      water: plantWater.length > 0 ? ("present" as const) : ("missing" as const),
+      water: presence(plantWater.length > 0),
+      expectation,
+      emergence_recorded: emergenceRecorded,
       attention,
     };
   });
