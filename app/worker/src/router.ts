@@ -717,7 +717,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
         plant_id: optionalStr(body.plant_id),
         group_name: parseOptionalEnum(body.group_name, "group_name", GROUPS),
         exemplar_id: parseOptionalEnum(body.exemplar_id, "exemplar_id", EXEMPLAR_IDS),
-        treatment_percentage: optionalNum(body.treatment_percentage),
+        treatment_percentage: parseOptionalEnum(body.treatment_percentage, "treatment_percentage", TREATMENT_PERCENTAGES),
         substrate_mass_g: optionalNum(body.substrate_mass_g) ?? 72,
         empty_pot_mass_g: optionalNum(body.empty_pot_mass_g),
         saucer_mass_g: optionalNum(body.saucer_mass_g),

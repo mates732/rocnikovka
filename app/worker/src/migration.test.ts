@@ -27,7 +27,10 @@ interface CopyPlan {
 function runDryRun(source: string, images?: string): { stdout: string; copyPlan: CopyPlan } {
   const args = ["tsx", TOOL, "--dry-run", "--source", source];
   if (images) args.push("--images", images);
-  const stdout = execFileSync("npx", args, { encoding: "utf8" });
+  const isWin = process.platform === "win32";
+  const cmd = isWin ? "cmd" : "npx";
+  const cmdArgs = isWin ? ["/c", "npx", ...args] : args;
+  const stdout = execFileSync(cmd, cmdArgs, { encoding: "utf8" });
 
   const rowsByTable: Record<string, number> = {};
   for (const match of stdout.matchAll(/^(\w+)\s+: (\d+) row\(s\)$/gm)) {

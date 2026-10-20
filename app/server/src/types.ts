@@ -199,8 +199,6 @@ export interface Day0PhysicalConfig {
 }
 
 // Day 0 Pot Allocation
-export type SowingStatus = "pending" | "sown" | "failed";
-export type EmergenceStatus = "not_sown" | "sown" | "awaiting" | "emerged" | "uncertain" | "failed";
 /** Whether a recorded mass was directly measured, entered as an approximation, or is unknown. */
 export type MassBasis = "measured" | "approximate" | "unknown";
 
@@ -239,7 +237,6 @@ export interface Day0PotAllocation {
 }
 
 // Day 0 Methodology Decisions
-export type DecisionStatus = "unresolved" | "proposed" | "approved" | "rejected" | "not_applicable";
 
 export interface Day0MethodologyDecision {
   decision_id: string;

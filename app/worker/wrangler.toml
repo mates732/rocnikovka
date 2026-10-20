@@ -76,8 +76,8 @@ ALLOWED_ORIGIN = "https://rocnikovka-ashy.vercel.app"
   bucket_name = "phytometer-images-test"
 
   [env.test.vars]
-  # Local Vite dev server, so the SPA can be exercised against the test Worker.
-  ALLOWED_ORIGIN = "http://localhost:5173"
+  # Vercel Preview for E2E testing against test Worker.
+  ALLOWED_ORIGIN = "https://app-kb2raqbpq-mates-projects-f1486734.vercel.app"
 
 # ---------------------------------------------------------------------------
 # Cloudflare Access — local simulation only.
