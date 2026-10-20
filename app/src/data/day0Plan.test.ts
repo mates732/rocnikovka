@@ -144,7 +144,7 @@ test("Day 0 plan: a planned volume is not an actual watering event", () => {
   // The plan module holds only planned values — it must never expose a stored
   // observation, so an app-level "has this pot been watered" can never be
   // satisfied by the plan alone.
-  assert.equal(typeof plannedWaterMlForGroup("G0"), "number");
+  assert.equal(typeof plannedWaterMlForGroup("G1"), "number");
   assert.ok(
     !Object.keys(DAY0_PLAN).includes("initial_water_ml"),
     "the plan must not carry actual observation fields"

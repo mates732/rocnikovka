@@ -127,7 +127,7 @@ function parseOptionalEnum<T extends string | number>(value: unknown, field: str
   return parseEnum(value, field, allowed);
 }
 
-const GROUPS = ["G1", "G2", "G3"] as const;
+const GROUPS = ["G0", "G1", "G2"] as const;
 const EXEMPLAR_IDS = ["EX01", "EX02", "EX03", "EX04", "EX05", "EX06", "EX07", "EX08", "EX09"] as const;
 const TREATMENT_PERCENTAGES = [100, 85, 70] as const;
 const PLANT_STATUSES = ["active", "damaged", "dead", "excluded"] as const;
@@ -679,9 +679,9 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           "pot_dimensions_basis",
           POT_DIMENSION_BASES
         ),
+        planned_water_ml_g0: optionalNum(body.planned_water_ml_g0),
         planned_water_ml_g1: optionalNum(body.planned_water_ml_g1),
         planned_water_ml_g2: optionalNum(body.planned_water_ml_g2),
-        planned_water_ml_g3: optionalNum(body.planned_water_ml_g3),
         created_at: str(body.created_at, "created_at"),
         updated_at: optionalStr(body.updated_at),
       });

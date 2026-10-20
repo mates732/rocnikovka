@@ -52,6 +52,8 @@ const PLANT = {
   plant_id: "PLT-001",
   pot_id: "POT-001",
   group_name: "G1",
+  exemplar_id: "EX01",
+  treatment_percentage: 100,
   emergence_date: "2026-02-01",
   status: "active",
   created_at: "2026-02-01T08:00:00",
@@ -258,7 +260,7 @@ test("pot allocation: planned seed count defaults to 3 and substrate to 72 g", a
     jsonRequest("POST", "/api/day0/pot-allocation", {
       allocation_id: "ALLOC-1717234800-001",
       pot_id: "POT-028",
-      group_name: "G0",
+      group_name: "G1",
       created_at: "2026-02-01T08:00:00",
     }),
     env
@@ -284,15 +286,21 @@ test("pot allocation: 27 pots x 3 planned seeds = 81, 9 per group", async () => 
   for (let i = 0; i < 27; i++) {
     const n = i + 1;
     const group = n <= 9 ? "G0" : n <= 18 ? "G1" : "G2";
+    const body = {
+      allocation_id: `ALLOC-171723480${String(i % 10)}-${String(n).padStart(3, "0")}`,
+      pot_id: `POT-${String(28 + i).padStart(3, "0")}`,
+      group_name: group,
+      created_at: "2026-02-01T08:00:00",
+    };
     const res = await handleRequest(
-      jsonRequest("POST", "/api/day0/pot-allocation", {
-        allocation_id: `ALLOC-171723480${String(i % 10)}-${String(n).padStart(3, "0")}`,
-        pot_id: `POT-${String(28 + i).padStart(3, "0")}`,
-        group_name: group,
-        created_at: "2026-02-01T08:00:00",
-      }),
+      jsonRequest("POST", "/api/day0/pot-allocation", body),
       env
     );
+    if (res.status !== 201) {
+      const text = await res.text();
+      console.error(`DEBUG: Iteration ${i}, group=${group}, body=`, JSON.stringify(body), `status=${res.status}, response=`, text);
+      throw new Error(`Iteration ${i}: group=${group}, status=${res.status}, body=${text}`);
+    }
     assert.equal(res.status, 201);
   }
   const list = await handleRequest(jsonRequest("GET", "/api/day0/pot-allocation"), env);
@@ -474,7 +482,7 @@ test("planned watering volumes never create a water event or a target mass", asy
     jsonRequest("POST", "/api/day0/pot-allocation", {
       allocation_id: "ALLOC-1717235500-001",
       pot_id: "POT-059",
-      group_name: "G0",
+      group_name: "G1",
       created_at: "2026-02-01T08:00:00",
     }),
     env
@@ -958,7 +966,9 @@ async function seedPlants(env: Env, count: number): Promise<void> {
       jsonRequest("POST", "/api/plants", {
         plant_id: `PLT-${String(i).padStart(3, "0")}`,
         pot_id: `POT-${String(i).padStart(3, "0")}`,
-        group_name: i <= 10 ? "G0" : i <= 20 ? "G1" : "G2",
+        group_name: i <= 9 ? "G0" : i <= 18 ? "G1" : "G2",
+        exemplar_id: "EX01",
+        treatment_percentage: 100,
         emergence_date: "2026-02-01",
         status: "active",
         created_at: `2026-02-01T08:00:${String(i).padStart(2, "0")}`,
@@ -1123,7 +1133,7 @@ test("plants: immutable fields are still refused regardless of the other fields"
   await handleRequest(jsonRequest("POST", "/api/plants", PLANT), env);
   const res = await handleRequest(
     jsonRequest("PATCH", "/api/plants/PLT-001", {
-      group_name: "G0",
+      group_name: "G2",
       notes: "pokus o zmenu skupiny",
       updated_at: "2026-02-02T08:00:00",
     }),
@@ -1290,7 +1300,7 @@ test("day0 pots: recording actual seeds sown does not change the planned count",
     jsonRequest("POST", "/api/day0/pot-allocation", {
       allocation_id: "ALLOC-SEEDS-1",
       pot_id: "POT-100",
-      group_name: "G0",
+      group_name: "G1",
       substrate_mass_g: 72,
       created_at: "2026-02-01T08:00:00",
     }),

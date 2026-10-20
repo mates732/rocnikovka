@@ -273,9 +273,9 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
 
   const potsAllocated = potAllocationCount === DAY0_PLAN.pots;
   const perGroupComplete =
+    potAllocation.filter((a) => a.group_name === "G0").length === DAY0_PLAN.groups.G0 &&
     potAllocation.filter((a) => a.group_name === "G1").length === DAY0_PLAN.groups.G1 &&
-    potAllocation.filter((a) => a.group_name === "G2").length === DAY0_PLAN.groups.G2 &&
-    potAllocation.filter((a) => a.group_name === "G3").length === DAY0_PLAN.groups.G3;
+    potAllocation.filter((a) => a.group_name === "G2").length === DAY0_PLAN.groups.G2;
 
   const sownPots = potAllocation.filter((a) => a.sowing_status === "sown" && a.sowing_date);
   const preparedPots = potAllocation.filter((a) => a.empty_pot_mass_g != null || a.saucer_mass_g != null);
@@ -285,13 +285,13 @@ export function Day0DashboardPage({ services: deps = services }: Day0DashboardPr
 
   const plannedVolumes = physicalConfig
     ? {
+        G0: physicalConfig.planned_water_ml_g0,
         G1: physicalConfig.planned_water_ml_g1,
         G2: physicalConfig.planned_water_ml_g2,
-        G3: physicalConfig.planned_water_ml_g3,
       }
     : undefined;
   const plannedVolumesComplete =
-    !!plannedVolumes && plannedVolumes.G1 != null && plannedVolumes.G2 != null && plannedVolumes.G3 != null;
+    !!plannedVolumes && plannedVolumes.G0 != null && plannedVolumes.G1 != null && plannedVolumes.G2 != null;
 
   type ReadinessState = "done" | "todo" | "blocked";
   type ReadinessRow = {
@@ -357,7 +357,7 @@ readinessRows.push(
       ? {
           id: "config",
           label: "Plánovaný objem zálivky",
-          detail: `Plán: G1 ${plannedVolumes?.G1} ml, G2 ${plannedVolumes?.G2} ml, G3 ${plannedVolumes?.G3} ml na květináč (jen plán).`,
+          detail: `Plán: G0 ${plannedVolumes?.G0} ml, G1 ${plannedVolumes?.G1} ml, G2 ${plannedVolumes?.G2} ml na květináč (jen plán).`,
           state: "done",
           link: "/experiment/day0/physical-config",
           linkLabel: "Upravit plán",
@@ -377,7 +377,7 @@ readinessRows.push(
       ? {
           id: "pots",
           label: "Alokace 27 květináčů",
-          detail: `Plán: ${DAY0_PLAN.pots} květináčů, ${DAY0_PLAN.groups.G1}/${DAY0_PLAN.groups.G2}/${DAY0_PLAN.groups.G3} na skupinu.`,
+          detail: `Plán: ${DAY0_PLAN.pots} květináčů, ${DAY0_PLAN.groups.G0}/${DAY0_PLAN.groups.G1}/${DAY0_PLAN.groups.G2} na skupinu.`,
           state: "todo",
           link: "/experiment/day0/pot-allocation",
           linkLabel: "Vytvořit alokaci",
@@ -386,7 +386,7 @@ readinessRows.push(
       ? {
           id: "pots",
           label: "Alokace 27 květináčů",
-          detail: `${potAllocationCount} květináčů, ${DAY0_PLAN.groups.G1}/${DAY0_PLAN.groups.G2}/${DAY0_PLAN.groups.G3} na skupinu.`,
+          detail: `${potAllocationCount} květináčů, ${DAY0_PLAN.groups.G0}/${DAY0_PLAN.groups.G1}/${DAY0_PLAN.groups.G2} na skupinu.`,
           state: "done",
           link: "/experiment/day0/pot-allocation",
           linkLabel: "Zkontrolovat",
@@ -394,7 +394,7 @@ readinessRows.push(
       : {
           id: "pots",
           label: "Alokace 27 květináčů",
-          detail: `${potAllocationCount} z ${DAY0_PLAN.pots} květináčů; skupiny G1=${potAllocation.filter((a) => a.group_name === "G1").length}, G2=${potAllocation.filter((a) => a.group_name === "G2").length}, G3=${potAllocation.filter((a) => a.group_name === "G3").length}.`,
+          detail: `${potAllocationCount} z ${DAY0_PLAN.pots} květináčů; skupiny G0=${potAllocation.filter((a) => a.group_name === "G0").length}, G1=${potAllocation.filter((a) => a.group_name === "G1").length}, G2=${potAllocation.filter((a) => a.group_name === "G2").length}.`,
           state: "todo",
           link: "/experiment/day0/pot-allocation",
           linkLabel: "Dokončit alokaci",

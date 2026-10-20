@@ -1,12 +1,12 @@
 /**
  * Treatment percentage for each group — stored independently from the group ID.
- * Protocol v1: G1 = 100%, G2 = 85%, G3 = 70%.
+ * Protocol v1: G0 = 100%, G1 = 85%, G2 = 70%.
  * Do not derive from the group label; the percentage is authoritative data.
  */
 export type TreatmentPercentage = 100 | 85 | 70;
 
-/** Experiment group identifiers — G1, G2, G3 per authoritative protocol. */
-export type Group = "G1" | "G2" | "G3";
+/** Experiment group identifiers — G0, G1, G2 per authoritative Protocol v1. */
+export type Group = "G0" | "G1" | "G2";
 
 /** Exemplar identifier within a group: EX01..EX09 (9 pots per group). */
 export type ExemplarId = `EX${"01" | "02" | "03" | "04" | "05" | "06" | "07" | "08" | "09"}`;
@@ -188,11 +188,12 @@ export interface Day0PhysicalConfig {
   /**
    * PLANNED watering volume per pot per group (ml). A plan value only — never
    * an actual watering event and never a gravimetric target mass.
-   * G1 = 100% (75 ml), G2 = 85% (64 ml), G3 = 70% (53 ml).
+   * Protocol v1 §6.1: G0 = 100% (75 ml), G1 = 85% (64 ml), G2 = 70% (53 ml).
+   * G0 is also the drift-correction control group (Protocol v1 §8).
    */
+  planned_water_ml_g0?: number;
   planned_water_ml_g1?: number;
   planned_water_ml_g2?: number;
-  planned_water_ml_g3?: number;
   created_at: string;
   updated_at?: string;
 }

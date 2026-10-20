@@ -84,7 +84,7 @@ ALLOWED_ORIGIN = "https://phytometer-app-test.78thz568ph.workers.dev"
 # Required for the fail-closed guard in the deployed test app.
 # Fill these in before deploying and verify anonymous access is blocked.
 REQUIRE_ACCESS_TEAM_DOMAIN = "https://royal-recipe-fc82.cloudflareaccess.com"
-REQUIRE_ACCESS_AUD = "02ab42d5c059834330c1e3aba0b7cc493aec5618b7e7f1d3b08fb12c23451706"
+REQUIRE_ACCESS_AUD = "0fe49fefd28f041c03695b644c2ef10e95d2bf7e49abd39a61dd1a4238e6fb6a"
 
 # ---------------------------------------------------------------------------
 # LOCAL ACCESS SIMULATION (wrangler dev only; does NOT enable Access)

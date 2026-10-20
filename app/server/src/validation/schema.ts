@@ -623,7 +623,7 @@ export function validateDay0PotAllocation(input: Day0PotAllocation): ValidationR
 
   if (input.pot_id) issues.push(...validateId("day0_pot_allocation", input.allocation_id, "pot_id", input.pot_id));
   if (input.plant_id) issues.push(...validateId("day0_pot_allocation", input.allocation_id, "plant_id", input.plant_id));
-  if (input.group_name) issues.push(...validateEnum("day0_pot_allocation", input.allocation_id, "group_name", input.group_name, ["G0", "G1", "G2"]));
+  if (input.group_name) issues.push(...validateEnum("day0_pot_allocation", input.allocation_id, "group_name", input.group_name, GROUPS));
   if (input.created_at) issues.push(...validateTimestamp("day0_pot_allocation", input.allocation_id, "created_at", input.created_at));
   if (input.updated_at) issues.push(...validateTimestamp("day0_pot_allocation", input.allocation_id, "updated_at", input.updated_at));
   if (input.sowing_date) issues.push(...validateDate("day0_pot_allocation", input.allocation_id, "sowing_date", input.sowing_date));
@@ -740,7 +740,7 @@ export function validatePlantWithDay0(input: Plant): ValidationResult {
 
   if (input.plant_id) issues.push(...validateId("plant", input.plant_id, "plant_id", input.plant_id));
   if (input.pot_id) issues.push(...validateId("plant", input.plant_id, "pot_id", input.pot_id));
-  if (input.group_name) issues.push(...validateEnum("plant", input.plant_id, "group_name", input.group_name, ["G0", "G1", "G2"]));
+  if (input.group_name) issues.push(...validateEnum("plant", input.plant_id, "group_name", input.group_name, GROUPS));
   if (input.status) issues.push(...validateEnum("plant", input.plant_id, "status", input.status, ["active", "damaged", "dead", "excluded"]));
   if (input.emergence_date) issues.push(...validateDate("plant", input.plant_id, "emergence_date", input.emergence_date));
   if (input.created_at) issues.push(...validateTimestamp("plant", input.plant_id, "created_at", input.created_at));

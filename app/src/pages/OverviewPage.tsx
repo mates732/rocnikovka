@@ -100,7 +100,7 @@ const flowSteps = [
 
 const protocolFacts = [
   { label: "Species", value: "Phaseolus vulgaris" },
-  { label: "Groups", value: "G1 100 · G2 85 · G3 70 (rel. gravimetric target)" },
+  { label: "Groups", value: "G0 100 · G1 85 · G2 70 (rel. gravimetric target)" },
   { label: "Planned length", value: "up to 28 days" },
   { label: "Manual reference", value: "3× per week · 2 repetitions" },
   { label: "Primary parameter", value: "plant height (cm)" },

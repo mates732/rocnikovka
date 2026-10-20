@@ -90,7 +90,7 @@ ALLOWED_ORIGIN = "https://rocnikovka-ashy.vercel.app"
 # `identity.email` is the simulated signed-in user.
 # ---------------------------------------------------------------------------
 [access.dev]
-aud = "phytometer-api"
+aud = "0fe49fefd28f041c03695b644c2ef10e95d2bf7e49abd39a61dd1a4238e6fb6a"
 
   [access.dev.identity]
   email = "student@example.com"

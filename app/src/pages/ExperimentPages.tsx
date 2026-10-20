@@ -797,7 +797,7 @@ export function ProtocolPage() {
           </div>
           <div>
             <dt>Groups</dt>
-            <dd>G1 (100%) · G2 (85%) · G3 (70%)</dd>
+            <dd>G0 (100%) · G1 (85%) · G2 (70%)</dd>
           </div>
           <div>
             <dt>Purpose</dt>
@@ -875,7 +875,7 @@ export function WaterPage({ services: deps = services }: WaterPageProps = {}) {
       <PageHeader
         eyebrow="Daily records"
         title="Water"
-        description="Gravimetric watering log — pots are weighed daily and topped up to the group's relative target (G1 100 · G2 85 · G3 70)."
+        description="Gravimetric watering log — pots are weighed daily and topped up to the group's relative target (G0 100 · G1 85 · G2 70)."
         titleId="water-title"
         actions={
           <button

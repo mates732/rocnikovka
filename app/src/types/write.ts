@@ -25,7 +25,7 @@ import type {
 export type CreatePlantInput = {
   plant_id: string; // PLT-XXX, immutable after creation
   pot_id: string; // POT-XXX, immutable after creation
-  group_name: Group; // G0 | G1 | G2
+  group_name: Group; // G1 | G2 | G3
   emergence_date: string; // ISO date YYYY-MM-DD (day 1 of the plant's experiment)
   status: PlantStatus; // active | damaged | dead | excluded
   created_at: string; // ISO YYYY-MM-DDTHH:MM:SS — required by the backend contract
