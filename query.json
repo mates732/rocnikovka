@@ -1,0 +1,1 @@
+{"sql":"SELECT trace_id, name, outcome, error, json(attributes) as attrs FROM spans WHERE name='POST' ORDER BY start_ms DESC LIMIT 5"}

@@ -77,7 +77,7 @@ ALLOWED_ORIGIN = "https://rocnikovka-ashy.vercel.app"
 
   [env.test.vars]
   # Vercel Preview for E2E testing against test Worker.
-  ALLOWED_ORIGIN = "https://app-kb2raqbpq-mates-projects-f1486734.vercel.app"
+  ALLOWED_ORIGIN = "https://rocnikovka-git-phytometer-preview-mates-projects-f1486734.vercel.app"
 
 # ---------------------------------------------------------------------------
 # Cloudflare Access — local simulation only.
