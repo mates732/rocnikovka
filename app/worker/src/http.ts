@@ -67,7 +67,7 @@ export function resolveCorsOrigin(request: Request, env: { ALLOWED_ORIGIN?: stri
   const configured = (env.ALLOWED_ORIGIN ?? "").trim();
   const origin = request.headers.get("Origin") ?? "";
   if (configured !== "") {
-    return origin === configured ? configured : configured;
+    return origin === configured ? origin : "";
   }
   return origin;
 }

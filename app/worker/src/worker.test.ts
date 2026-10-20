@@ -895,7 +895,7 @@ test("CORS: a disallowed origin is not granted access", async () => {
   const env = makeEnv();
   const res = await handleRequest(jsonRequest("GET", "/api/plants", undefined, "https://evil.example.com"), env);
   assert.notEqual(res.headers.get("access-control-allow-origin"), "https://evil.example.com");
-  assert.equal(res.headers.get("access-control-allow-origin"), ORIGIN);
+  assert.equal(res.headers.get("access-control-allow-origin"), "");
 });
 
 test("CORS: preflight is answered with 204 and allowed methods", async () => {
