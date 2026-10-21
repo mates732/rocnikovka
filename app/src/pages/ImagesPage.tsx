@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { DataTable } from "../components/DataTable";
@@ -11,6 +11,7 @@ import { PageHeader } from "../components/PageHeader";
 import { useDayContext } from "../hooks/useDayContext";
 import { services } from "../data/adapters";
 import { normalizeTimestampToSeconds } from "./ExperimentPages";
+import { formatScientificLabel, formatPlantShortLabel } from "../utils/plantLabels";
 import type { ImageService, PlantService } from "../services/interfaces";
 import type {
   CalibrationStatus,
@@ -260,7 +261,7 @@ export function ImageUploadForm({ plants, uploadImage, verifyImageFile, onCreate
             <option value="">Select a plant</option>
             {plants.map((plant) => (
               <option key={plant.plant_id} value={plant.plant_id}>
-                {plant.plant_id} · pot {plant.pot_id}
+                {formatPlantShortLabel(plant)}
               </option>
             ))}
           </select>
@@ -502,6 +503,14 @@ export function ImagesPage({ services: deps = services }: ImagesPageProps = {}) 
       .catch((err) => setError(err));
   };
 
+  // Build plant lookup for scientific labels in the table
+  const plantLookup = useMemo(() => {
+    if (!plants) return new Map<string, Plant>();
+    const map = new Map<string, Plant>();
+    for (const p of plants) map.set(p.plant_id, p);
+    return map;
+  }, [plants]);
+
   return (
     <section className="page" aria-labelledby="images-title">
       <PageHeader
@@ -563,37 +572,41 @@ export function ImagesPage({ services: deps = services }: ImagesPageProps = {}) 
           empty={images.length === 0}
           emptyMessage="No images recorded. Evidence for the first plant/day will appear here after the first upload."
         >
-          {images.map((image) => (
-            <tr key={image.image_id}>
-              <td className="cell-evidence">
-                <EvidenceThumb src={imageFileUrl(image.image_id)} />
-                <div className="cell-evidence-main">
-                  <Link className="id-link" to={`/images/${image.image_id}`}>
-                    {image.image_id}
-                  </Link>
-                  <span className="cell-sub">RAW stored file</span>
-                </div>
-              </td>
-              <td>
-                <Link to={`/plants/${image.plant_id}`}>{image.plant_id}</Link>
-              </td>
-              <td className="nowrap">{image.timestamp}</td>
-              <td>
-                <span className="day-chip">Day {image.experiment_day}</span>
-              </td>
-              <td>
-                <span className={`verdict verdict-${image.image_quality_status.toLowerCase()}`}>
-                  {image.image_quality_status}
-                </span>
-              </td>
-              <td>
-                <span className={`verdict verdict-${image.calibration_status}`}>
-                  {image.calibration_status === "pass" ? "PASS" : image.calibration_status === "warn" ? "WARN" : "FAIL"}
-                </span>
-              </td>
-              <td className="mono-cell">{image.camera_id}</td>
-            </tr>
-          ))}
+          {images.map((image) => {
+              const plant = plantLookup.get(image.plant_id);
+              const plantLabel = plant ? formatPlantShortLabel(plant) : image.plant_id;
+              return (
+                <tr key={image.image_id}>
+                  <td className="cell-evidence">
+                    <EvidenceThumb src={imageFileUrl(image.image_id)} />
+                    <div className="cell-evidence-main">
+                      <Link className="id-link" to={`/images/${image.image_id}`}>
+                        {image.image_id}
+                      </Link>
+                      <span className="cell-sub">RAW stored file</span>
+                    </div>
+                  </td>
+                  <td>
+                    <Link to={`/plants/${image.plant_id}`}>{plantLabel}</Link>
+                  </td>
+                  <td className="nowrap">{image.timestamp}</td>
+                  <td>
+                    <span className="day-chip">Day {image.experiment_day}</span>
+                  </td>
+                  <td>
+                    <span className={`verdict verdict-${image.image_quality_status.toLowerCase()}`}>
+                      {image.image_quality_status}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`verdict verdict-${image.calibration_status}`}>
+                      {image.calibration_status === "pass" ? "PASS" : image.calibration_status === "warn" ? "WARN" : "FAIL"}
+                    </span>
+                  </td>
+                  <td className="mono-cell">{image.camera_id}</td>
+                </tr>
+              );
+            })}
         </DataTable>
       )}
     </section>

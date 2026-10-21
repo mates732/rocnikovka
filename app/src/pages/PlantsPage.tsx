@@ -8,6 +8,7 @@ import { ErrorSummary } from "../components/ErrorSummary";
 import { PageHeader } from "../components/PageHeader";
 import { services } from "../data/adapters";
 import { normalizeTimestampToSeconds } from "./ExperimentPages";
+import { formatScientificLabel, formatPlantFullLabel } from "../utils/plantLabels";
 import type { ImageService, MeasurementService, PlantService, PositionService, WaterService } from "../services/interfaces";
 import type { AICVMeasurement, Group, ImageRecord, ManualMeasurement, Plant, PlantStatus, PositionEvent, WaterEvent } from "../types/entities";
 import type { CreatePlantInput } from "../types/write";
@@ -31,10 +32,6 @@ const PLANT_STATUS_MARKS: Record<PlantStatus, string> = {
 
 function registrationDate(plant: Plant): string {
   return plant.created_at ? plant.created_at.slice(0, 10) : "—";
-}
-
-function scientificLabel(plant: Plant): string {
-  return `${plant.group_name} · ${plant.exemplar_id}`;
 }
 
 export async function loadPlants() {
@@ -479,9 +476,9 @@ export function PlantsPage({ services: deps = services }: PlantsPageProps = {}) 
             <tr key={plant.plant_id}>
               <td className="cell-specimen">
                 <Link className="id-link" to={`/plants/${plant.plant_id}`}>
-                  {plant.plant_id}
+                  {formatScientificLabel(plant)}
                 </Link>
-                <span className="cell-sub">registered {registrationDate(plant)}</span>
+                <span className="cell-sub">{plant.plant_id} · registered {registrationDate(plant)}</span>
               </td>
               <td>
                 <span className={`chip chip-group chip-group-${plant.group_name}`}>{plant.group_name}</span>
@@ -666,7 +663,7 @@ export function PlantDetailPage({ services: deps = services }: PlantDetailPagePr
   }, [timeline]);
 
   const subtitle = plant
-    ? `${PLANT_STATUS_LABELS[plant.status]} specimen · ${scientificLabel(plant)} · pot ${plant.pot_id}`
+    ? `${PLANT_STATUS_LABELS[plant.status]} specimen · ${formatScientificLabel(plant)} · pot ${plant.pot_id}`
     : "Specimen record";
 
   return (
@@ -684,7 +681,7 @@ export function PlantDetailPage({ services: deps = services }: PlantDetailPagePr
         <>
           <PageHeader
             eyebrow="Specimen"
-            title={scientificLabel(plant)}
+            title={formatScientificLabel(plant)}
             description={subtitle}
             titleId="plant-detail-title"
             actions={
@@ -697,7 +694,11 @@ export function PlantDetailPage({ services: deps = services }: PlantDetailPagePr
           <div className="specimen-plate" aria-label={`Registered metadata for ${plant.plant_id}`}>
             <span className="specimen-plate-item">
               <span className="specimen-plate-label">Scientific ID</span>
-              <span className="mono-cell">{scientificLabel(plant)}</span>
+              <span className="mono-cell">{formatScientificLabel(plant)}</span>
+            </span>
+            <span className="specimen-plate-item">
+              <span className="specimen-plate-label">Full ID</span>
+              <span className="mono-cell">{formatPlantFullLabel(plant)}</span>
             </span>
             <span className="specimen-plate-item">
               <span className="specimen-plate-label">Treatment</span>

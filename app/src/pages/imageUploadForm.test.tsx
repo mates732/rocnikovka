@@ -17,8 +17,8 @@ import type { ImageRecord, Plant } from "../types/entities";
 import type { UploadImageInput } from "../types/write";
 
 const plants: Plant[] = [
-  { plant_id: "PLT-001", pot_id: "POT-001", group_name: "G1", emergence_date: "2025-03-01", status: "active" },
-  { plant_id: "PLT-002", pot_id: "POT-002", group_name: "G2", emergence_date: "2025-03-01", status: "active" },
+  { plant_id: "PLT-001", pot_id: "POT-001", group_name: "G1", exemplar_id: "EX01", treatment_percentage: 100, emergence_date: "2025-03-01", status: "active" },
+  { plant_id: "PLT-002", pot_id: "POT-002", group_name: "G2", exemplar_id: "EX02", treatment_percentage: 85, emergence_date: "2025-03-01", status: "active" },
 ];
 
 const persisted: ImageRecord = {
@@ -498,7 +498,8 @@ test("C/E) real plants come from PlantService; no plants makes upload impossible
   const values = select.findAll((n: any) => n.type === "option").map((o: any) => o.props.value);
   assert.deepEqual(new Set(values), new Set(["", "PLT-001", "PLT-002"]));
   const html = rendered(withPlants);
-  assert.ok(html.includes("PLT-001 · pot POT-001"), "plant id and pot context shown");
+  // Now uses scientific identifier format: G1 · EX01 · PLT-001
+  assert.ok(html.includes("G1 · EX01 · PLT-001"), "scientific plant label shown");
 
   const noPlants = renderPage({
     plantService: { listPlants: async () => [], getDayContext: async () => null },
