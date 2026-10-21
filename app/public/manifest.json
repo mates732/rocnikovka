@@ -1,0 +1,17 @@
+{
+  "name": "PHYTOMETER",
+  "short_name": "Phytometer",
+  "description": "Plant growth measurement for scientific experiments",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF8F2",
+  "theme_color": "#1E2E22",
+  "icons": [
+    {
+      "src": "/logo-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

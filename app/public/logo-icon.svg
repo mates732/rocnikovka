@@ -1,0 +1,30 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  width="64"
+  height="64"
+  role="img"
+  aria-label="PHYTOMETER"
+>
+  <!-- Bean shape with sprout -->
+  <path
+    d="M32 58 C32 46 20 34 20 22 C20 10 30 2 32 2 C34 2 44 10 44 22 C44 34 32 46 32 58 Z"
+    fill="#365C3A"
+  />
+  <!-- Sprout emerging from bean -->
+  <path
+    d="M32 18 C30 14 28 10 30 6 C32 2 34 6 32 10 C30 14 32 18 32 18 Z"
+    fill="#7A8F6B"
+  />
+  <path
+    d="M32 10 L32 4"
+    stroke="#26401F"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <!-- Small leaf on sprout -->
+  <path
+    d="M32 8 Q36 6 38 10 Q36 14 32 12 Z"
+    fill="#7A8F6B"
+  />
+</svg>

@@ -25,12 +25,16 @@ import { Day0EquipmentPage } from "./pages/Day0EquipmentPage";
 import { Day0PhysicalConfigPage } from "./pages/Day0PhysicalConfigPage";
 import { Day0PotAllocationPage } from "./pages/Day0PotAllocationPage";
 import { Day0MethodologyPage } from "./pages/Day0MethodologyPage";
+import { QuickCapturePage } from "./pages/QuickCapturePage";
+import { DiaryPage } from "./pages/DiaryPage";
 
 export default function App() {
   return (
     <AppShell>
       <Routes>
         <Route path="/" element={<OverviewPage />} />
+        <Route path="/capture" element={<QuickCapturePage />} />
+        <Route path="/diary" element={<DiaryPage />} />
         <Route path="/plants" element={<PlantsPage />} />
         <Route path="/plants/:plantId" element={<PlantDetailPage />} />
         <Route path="/images" element={<ImagesPage />} />

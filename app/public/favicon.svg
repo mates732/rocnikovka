@@ -1,0 +1,26 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+  width="32"
+  height="32"
+>
+  <!-- Bean shape with sprout for favicon -->
+  <path
+    d="M16 29 C16 23 10 17 10 11 C10 5 15 1 16 1 C17 1 22 5 22 11 C22 17 16 23 16 29 Z"
+    fill="#26401F"
+  />
+  <path
+    d="M16 9 C15 7 14 5 15 3 C16 1 17 3 16 5 C15 7 16 9 16 9 Z"
+    fill="#365C3A"
+  />
+  <path
+    d="M16 5 L16 2"
+    stroke="#1E2E22"
+    stroke-width="1.5"
+    stroke-linecap="round"
+  />
+  <path
+    d="M16 4 Q18 3 19 5 Q18 7 16 6 Z"
+    fill="#365C3A"
+  />
+</svg>

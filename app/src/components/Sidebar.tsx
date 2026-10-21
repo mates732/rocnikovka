@@ -1,91 +1,109 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, useLocation, NavLink } from "react-router-dom";
+import logoWordmark from "/logo-wordmark.svg";
+import logoIcon from "/logo-icon.svg";
 
 type NavItem = { to: string; label: string; exact?: boolean };
-
 type NavSection = { title: string; items: NavItem[] };
 
 const navSections: NavSection[] = [
   {
-    title: "Workspace",
-    items: [{ to: "/", label: "Overview", exact: true }],
+    title: "Přehled",
+    items: [{ to: "/", label: "Dashboard", exact: true }],
   },
   {
-    title: "Collection",
-    items: [{ to: "/plants", label: "Plants" }],
+    title: "Focení",
+    items: [{ to: "/capture", label: "Rychlé focení" }],
   },
   {
-    title: "Day 0 Setup",
+    title: "Deník",
+    items: [{ to: "/diary", label: "Experiment Diary" }],
+  },
+  {
+    title: "Rostliny",
     items: [
-      { to: "/experiment/day0", label: "Day 0 Overview" },
-      { to: "/experiment/day0/equipment", label: "Equipment" },
-      { to: "/experiment/day0/physical-config", label: "Physical Config" },
-      { to: "/experiment/day0/pot-allocation", label: "Pots & Sowing" },
-      { to: "/experiment/day0/methodology-decisions", label: "Methodology Decisions" },
-    ],
-  },
-  {
-    title: "Daily Records",
-    items: [
-      { to: "/images", label: "Images" },
-      { to: "/measurements", label: "Measurements" },
-      { to: "/experiment/water", label: "Water" },
-      { to: "/experiment/positions", label: "Positions" },
-    ],
-  },
-  {
-    title: "Experiment",
-    items: [
-      { to: "/experiment/setup", label: "Setup" },
-      { to: "/experiment/daily-log", label: "Daily Lab Log" },
-      { to: "/experiment/verification", label: "Verification" },
-      { to: "/experiment/quality", label: "Quality Control" },
-      { to: "/experiment/protocol", label: "Protocol" },
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      { to: "/analysis", label: "Analysis" },
-      { to: "/validation", label: "Validation" },
-      { to: "/settings", label: "Settings" },
+      { to: "/plants", label: "Specimen Register" },
+      { to: "/plants/g1", label: "G1 (100%)" },
+      { to: "/plants/g2", label: "G2 (85%)" },
+      { to: "/plants/g3", label: "G3 (70%)" },
     ],
   },
 ];
 
-function BrandMark() {
+function BrandMark({ size = 26, className = "" }: { size?: number; className?: string }) {
   return (
     <svg
-      className="brand-mark"
-      viewBox="0 0 24 24"
-      width="26"
-      height="26"
+      className={`brand-mark ${className}`}
+      viewBox="0 0 64 64"
+      width={size}
+      height={size}
       aria-hidden="true"
       focusable="false"
     >
       <path
-        d="M12 21.2C12 12.6 15.2 6.2 21.5 2.5c-1.6 10.6-7.2 15.9-9.5 18.7z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M32 58 C32 46 20 34 20 22 C20 10 30 2 32 2 C34 2 44 10 44 22 C44 34 32 46 32 58 Z"
+        fill="currentColor"
       />
       <path
-        d="M12 21.2C12 12.6 8.8 6.2 2.5 2.5c1.6 10.6 7.2 15.9 9.5 18.7z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M32 18 C30 14 28 10 30 6 C32 2 34 6 32 10 C30 14 32 18 32 18 Z"
+        fill="#7A8F6B"
       />
       <path
-        d="M12 21.2V9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
+        d="M32 10 L32 4"
+        stroke="#26401F"
+        strokeWidth="2"
         strokeLinecap="round"
       />
+      <path
+        d="M32 8 Q36 6 38 10 Q36 14 32 12 Z"
+        fill="#7A8F6B"
+      />
+    </svg>
+  );
+}
+
+export function Wordmark({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={`brand-wordmark ${className}`}
+      viewBox="0 0 320 64"
+      width="170"
+      height="34"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <linearGradient id="wordmark-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#1E2E22" />
+          <stop offset="100%" stopColor="#26401F" />
+        </linearGradient>
+      </defs>
+      <text
+        x="160"
+        y="46"
+        fontFamily="Space Grotesk, Avenir Next, Helvetica Neue, Arial, sans-serif"
+        fontSize="52"
+        fontWeight="600"
+        letterSpacing="0.02em"
+        textAnchor="middle"
+        fill="url(#wordmark-gradient)"
+      >
+        PHYTOMETER
+      </text>
+      <g transform="translate(112, 10)">
+        <path
+          d="M0 0 Q8 -8 16 0 Q8 8 0 0 Z"
+          fill="#365C3A"
+          transform="scale(0.6) translate(2, 4)"
+        />
+        <path
+          d="M8 0 L8 12"
+          stroke="#365C3A"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          transform="scale(0.6) translate(2, 4)"
+        />
+      </g>
     </svg>
   );
 }
@@ -93,15 +111,14 @@ function BrandMark() {
 /**
  * Primary navigation.
  *
- * Desktop (>1024px): persistent compact left sidebar with grouped sections.
- * Smaller screens: a compact top bar holding the brand and a "Menu" toggle;
- * activating it reveals the same grouped sections in a dropdown panel, so no
- * single horizontal row of every item ever appears.
+ * Desktop (>1024px): persistent compact left sidebar with 4 sections.
+ * Mobile: top bar with brand + hamburger; opens dropdown with same 4 sections.
  */
 export function Sidebar() {
   const [open, setOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
+  const location = useLocation();
 
   const close = () => setOpen(false);
 
@@ -115,8 +132,6 @@ export function Sidebar() {
     };
     const onPointerDown = (event: PointerEvent) => {
       if (event.target instanceof Node && !navRef.current?.contains(event.target)) {
-        // Swallow the tap that dismisses the menu so it never also activates
-        // whatever sits underneath the open panel.
         event.preventDefault();
         setOpen(false);
       }
@@ -129,6 +144,11 @@ export function Sidebar() {
     };
   }, [open]);
 
+  // Close mobile menu on navigation
+  useEffect(() => {
+    if (open) close();
+  }, [location.pathname]);
+
   return (
     <nav
       ref={navRef}
@@ -136,11 +156,13 @@ export function Sidebar() {
       aria-label="Primary navigation"
     >
       <div className="sidebar-brand">
-        <BrandMark />
-        <div className="sidebar-brand-copy">
-          <p className="brand-name">Phytometer</p>
-          <p className="brand-sub">plant growth measurement</p>
-        </div>
+        <Link to="/" className="brand-link" aria-label="PHYTOMETER — Home" onClick={close}>
+          <BrandMark size={28} />
+          <div className="sidebar-brand-copy">
+            <Wordmark className="brand-wordmark-sidebar" />
+            <p className="brand-sub">plant growth measurement</p>
+          </div>
+        </Link>
         <button
           ref={toggleRef}
           type="button"
@@ -151,23 +173,11 @@ export function Sidebar() {
         >
           {open ? (
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
-              <path
-                d="M3 3l10 10M13 3L3 13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
+              <path d="M3 3l10 10M13 3L3 13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           ) : (
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
-              <path
-                d="M2 4h12M2 8h12M2 12h12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
+              <path d="M2 4h12M2 8h12M2 12h12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           )}
           <span>{open ? "Close" : "Menu"}</span>

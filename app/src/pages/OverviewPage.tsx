@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ErrorSummary } from "../components/ErrorSummary";
 import { EvidenceThumb } from "../components/EvidenceThumb";
+import { StatusBadge } from "../components/StatusBadge";
 import { services } from "../data/adapters";
 import { describeApiOrigin, hasExternalApiBase } from "../data/apiBase";
 import { imageFileUrl } from "./ImagesPage";
@@ -52,60 +53,34 @@ const emptyBundle: RecordBundle = {
   positions: [],
 };
 
-/** Daily operator workflow — mirrors the real record journey of the protocol. */
-const flowSteps = [
-  {
-    n: "01",
-    title: "Plant",
-    copy: "Register a specimen identity, group and pot before any record exists.",
-    to: "/plants",
-    label: "Specimen register",
-  },
-  {
-    n: "02",
-    title: "Image",
-    copy: "Capture standardized photographic evidence per specimen and experiment day.",
-    to: "/images",
-    label: "Evidence register",
-  },
-  {
-    n: "03",
-    title: "Manual reference",
-    copy: "Record two independent manual repetitions as the day reference.",
-    to: "/measurements",
-    label: "Manual records",
-  },
-  {
-    n: "04",
-    title: "Water / position",
-    copy: "Log irrigation and relocation context tied to specimen history.",
-    to: "/experiment/water",
-    label: "Water events",
-  },
-  {
-    n: "05",
-    title: "AI / CV",
-    copy: "Compare automated extraction records against manually curated reference.",
-    to: "/analysis",
-    label: "Analysis",
-  },
-  {
-    n: "06",
-    title: "Verification",
-    copy: "Inspect daily completeness, repetitions and exceptions before review closure.",
-    to: "/experiment/verification",
-    label: "Inspection board",
-  },
-];
+/**
+ * Calculates experiment day from sowing date.
+ * Day 0 = sowing date. Day 1 = following calendar day.
+ * Handles timezone correctly by using local date comparison.
+ */
+function calculateExperimentDay(sowingDate: string | null | undefined): number | null {
+  if (!sowingDate) return null;
+  const sow = new Date(sowingDate + "T00:00:00");
+  if (isNaN(sow.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = today.getTime() - sow.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  return days >= 0 ? days : null;
+}
 
-const protocolFacts = [
-  { label: "Species", value: "Phaseolus vulgaris" },
-  { label: "Groups", value: "G0 100 · G1 85 · G2 70 (rel. gravimetric target)" },
-  { label: "Planned length", value: "up to 28 days" },
-  { label: "Manual reference", value: "3× per week · 2 repetitions" },
-  { label: "Primary parameter", value: "plant height (cm)" },
-  { label: "Experiment day", value: "always operator-entered" },
-];
+/** Format a date as "DD MMM YYYY" in Czech locale. */
+function formatDateCZ(date: Date): string {
+  return date.toLocaleDateString("cs-CZ", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** Get the sowing date from the first plant record, if available. */
+function getSowingDate(plants: Plant[]): string | null {
+  for (const plant of plants) {
+    if (plant.sowing_date) return plant.sowing_date;
+  }
+  return null;
+}
 
 export function OverviewPage({ services: deps = services }: OverviewPageProps = {}) {
   const [records, setRecords] = useState<RecordBundle>(emptyBundle);
@@ -117,9 +92,6 @@ export function OverviewPage({ services: deps = services }: OverviewPageProps = 
     let cancelled = false;
 
     (async () => {
-      // Per-source loading on purpose: one unreachable source must never blank
-      // the whole experiment landing page. Failures stay visible below — each
-      // is rendered explicitly, never hidden or replaced by fake data.
       const tasks: Array<{ key: SourceKey; run: () => Promise<unknown> }> = [
         { key: "plants", run: () => deps.plantService.listPlants() },
         { key: "images", run: () => deps.imageService.listImages() },
@@ -164,22 +136,56 @@ export function OverviewPage({ services: deps = services }: OverviewPageProps = 
 
   const failedKeys = useMemo(() => new Set(failures.map((failure) => failure.key)), [failures]);
 
-  const stats: Array<{ key: SourceKey; label: string; to: string }> = [
-    { key: "plants", label: "Registered plants", to: "/plants" },
-    { key: "images", label: "Images recorded", to: "/images" },
-    { key: "manual", label: "Manual measurements", to: "/measurements" },
-    { key: "aicv", label: "AI/CV measurements", to: "/measurements" },
-    { key: "water", label: "Water events", to: "/experiment/water" },
-    { key: "positions", label: "Position events", to: "/experiment/positions" },
-  ];
+  // Experiment day calculation
+  const sowingDate = useMemo(() => getSowingDate(records.plants), [records.plants]);
+  const experimentDay = useMemo(() => calculateExperimentDay(sowingDate), [sowingDate]);
+  const today = useMemo(() => formatDateCZ(new Date()), []);
+  const tomorrow = useMemo(() => formatDateCZ(new Date(Date.now() + 24 * 60 * 60 * 1000)), []);
 
-  const statValue = (key: SourceKey): number | null => {
-    if (!loaded || failedKeys.has(key)) return null;
-    return records[key].length;
-  };
+  // Germination count
+  const germinatedCount = useMemo(
+    () => records.plants.filter((p) => p.emergence_status === "emerged").length,
+    [records.plants]
+  );
+  const totalPlants = records.plants.length;
 
-  // Newest persisted image only — real records, never fabricated.
-  const evidenceImage = useMemo(
+  // Today's activity
+  const todayImages = useMemo(
+    () =>
+      records.images.filter((img) => {
+        const imgDate = new Date(img.timestamp).toLocaleDateString("cs-CZ");
+        return imgDate === today;
+      }),
+    [records.images, today]
+  );
+  const todayManual = useMemo(
+    () =>
+      records.manual.filter((m) => {
+        const mDate = new Date(m.timestamp).toLocaleDateString("cs-CZ");
+        return mDate === today;
+      }),
+    [records.manual, today]
+  );
+  const todayWater = useMemo(
+    () =>
+      records.water.filter((w) => {
+        const wDate = new Date(w.timestamp).toLocaleDateString("cs-CZ");
+        return wDate === today;
+      }),
+    [records.water, today]
+  );
+  const todayActivityCount = todayImages.length + todayManual.length + todayWater.length;
+  const lastActivity = useMemo(() => {
+    const all = [
+      ...records.images.map((i) => ({ time: i.timestamp, type: "image" as const })),
+      ...records.manual.map((m) => ({ time: m.timestamp, type: "manual" as const })),
+      ...records.water.map((w) => ({ time: w.timestamp, type: "water" as const })),
+    ].sort((a, b) => b.time.localeCompare(a.time));
+    return all[0] ?? null;
+  }, [records.images, records.manual, records.water]);
+
+  // Latest image
+  const latestImage = useMemo(
     () =>
       loaded && !failedKeys.has("images") && records.images.length > 0
         ? [...records.images].sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0]
@@ -189,38 +195,39 @@ export function OverviewPage({ services: deps = services }: OverviewPageProps = 
 
   return (
     <section className="page home" aria-labelledby="home-title">
-      <header className="home-hero">
-        <div className="home-hero-copy">
-          <p className="page-eyebrow">EXPERIMENT / MANUAL REFERENCE × AI/CV</p>
-          <h1 id="home-title" className="page-title">
-            Measure what grows.
-          </h1>
-          <p className="page-description">
-            A controlled <em>Phaseolus vulgaris</em> experiment where manual measurements become the
-            reference for computer-vision analysis.
-          </p>
-          <dl className="hero-tech-meta" aria-label="Protocol metadata">
-            <div>
-              <dt>Protocol</dt>
-              <dd>v1 · locked</dd>
-            </div>
-            <div>
-              <dt>Method</dt>
-              <dd>manual reference + AI/CV</dd>
-            </div>
-            <div>
-              <dt>Species</dt>
-              <dd>Phaseolus vulgaris</dd>
-            </div>
-          </dl>
+      {/* Experiment Status Bar */}
+      <header className="experiment-status-bar" aria-label="Experiment status">
+        <div className="status-grid">
+          <div className="status-item">
+            <span className="status-label">Experiment day</span>
+            <span className="status-value status-value--day">
+              {experimentDay !== null ? `Day ${experimentDay}` : "—"}
+            </span>
+          </div>
+          <div className="status-item">
+            <span className="status-label">Today</span>
+            <span className="status-value">{today}</span>
+          </div>
+          <div className="status-item">
+            <span className="status-label">Sowing date</span>
+            <span className="status-value">{sowingDate ? formatDateCZ(new Date(sowingDate + "T00:00:00")) : "Not set"}</span>
+          </div>
+          <div className="status-item">
+            <span className="status-label">Germination</span>
+            <span className="status-value status-value--germination">
+              {germinatedCount} / {totalPlants} germinated
+            </span>
+          </div>
         </div>
-        <HeroEvidenceCard
-          key={evidenceImage?.image_id ?? "empty"}
-          image={evidenceImage}
-          sourceUnavailable={loaded && failedKeys.has("images")}
-        />
+        {experimentDay === null && (
+          <div className="status-warning">
+            <StatusBadge status="WARN" />
+            <span>Sowing date not set — experiment day cannot be calculated.</span>
+          </div>
+        )}
       </header>
 
+      {/* Source Failures */}
       {failures.length > 0 ? (
         <div className="panel panel-alert" role="alert">
           <p className="empty-state-title">Some record sources could not be read</p>
@@ -248,310 +255,176 @@ export function OverviewPage({ services: deps = services }: OverviewPageProps = 
         </div>
       ) : null}
 
-      <section className="record-summary" aria-labelledby="records-heading">
-        <div className="section-heading-row">
-          <h2 id="records-heading" className="section-heading">
-            Persisted records
-          </h2>
-          <p className="section-heading-note">Read live from the backend — no estimated values.</p>
-        </div>
-
-        {loading ? (
-          <div className="loading-note" role="status">
-            <span className="loading-dot" aria-hidden="true" />
-            Reading records from the backend…
+      {/* Main Content */}
+      <main className="home-main">
+        {/* Today's Activity */}
+        <section className="panel panel-today" aria-labelledby="today-heading">
+          <div className="panel-heading-row">
+            <h2 id="today-heading" className="section-heading">
+              Today's activity
+            </h2>
+            <p className="section-heading-note">
+              Records created today ({today}). Tomorrow is {tomorrow} (Day {experimentDay !== null ? experimentDay + 1 : "—"}).
+            </p>
           </div>
-        ) : (
-          <div className="stat-grid">
-            {stats.map((stat) => {
-              const value = statValue(stat.key);
-              const unavailable = value === null;
-              return (
-                <Link
-                  key={stat.key}
-                  className="stat-block"
-                  to={stat.to}
-                  title={unavailable ? `${stat.label} — unavailable (source could not be read)` : undefined}
-                >
-                  <span className="stat-value">{unavailable ? "—" : value}</span>
-                  <span className="stat-label">{stat.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
 
-        {loaded && !failedKeys.has("plants") && records.plants.length === 0 ? (
-          <div className="panel">
-            <div className="empty-state">
-              <p className="empty-state-mark" aria-hidden="true">
-                —
-              </p>
-              <div>
-                <p className="empty-state-title">No plants registered yet.</p>
-                <p className="empty-state-description">
-                  Registration gives every plant a persistent identity before any image or measurement
-                  is recorded. The experiment cannot start without it.
-                </p>
-                <div className="empty-state-actions">
-                  <Link className="btn btn-primary" to="/plants">
-                    Register the first plant
-                  </Link>
-                </div>
+          <div className="today-grid">
+            <Link className="today-card today-card--images" to="/images">
+              <div className="today-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
+                  <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                  <path d="M21 15l-5-5L5 17" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
-            </div>
-          </div>
-        ) : null}
-      </section>
-
-      {loaded ? <LatestEvidence records={records} failures={failures} /> : null}
-
-      <section aria-labelledby="workflow-heading" className="flow-section">
-        <div className="section-heading-row">
-          <h2 id="workflow-heading" className="section-heading">
-            Daily operator flow
-          </h2>
-          <p className="section-heading-note">The order in which a plant/day becomes fully recorded.</p>
-        </div>
-        <ol className="flow-grid">
-          {flowSteps.map((step) => (
-            <li key={step.n} className="flow-step">
-              <span className="flow-step-n" aria-hidden="true">
-                {step.n}
-              </span>
-              <div>
-                <h3>{step.title}</h3>
-                <p>{step.copy}</p>
-                <Link className="flow-step-link" to={step.to}>
-                  {step.label} →
-                </Link>
+              <div className="today-card-content">
+                <span className="today-card-count">{todayImages.length}</span>
+                <span className="today-card-label">Photographs today</span>
               </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="panel protocol-card" aria-labelledby="context-heading">
-        <div className="panel-heading">
-          <h2 id="context-heading">Experiment context</h2>
-          <p>
-            Protocol v1 — locked. See <code>experiment/protocol_v1_locked.md</code>.
-          </p>
-        </div>
-        <dl className="metadata-grid">
-          {protocolFacts.map((fact) => (
-            <div key={fact.label}>
-              <dt>{fact.label}</dt>
-              <dd>{fact.value}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-    </section>
-  );
-}
-
-/**
- * Hero evidence tile. Shows the newest persisted RAW image when one exists;
- * otherwise an intentional empty state — never a fake preview.
- */
-function HeroEvidenceCard({
-  image,
-  sourceUnavailable,
-}: {
-  image: ImageRecord | null;
-  sourceUnavailable: boolean;
-}) {
-  const [broken, setBroken] = useState(false);
-
-  const decor = (
-    <>
-      <span className="crop-mark crop-tl" aria-hidden="true" />
-      <span className="crop-mark crop-tr" aria-hidden="true" />
-      <span className="crop-mark crop-bl" aria-hidden="true" />
-      <span className="crop-mark crop-br" aria-hidden="true" />
-      <span className="crosshair crosshair-h" aria-hidden="true" />
-      <span className="crosshair crosshair-v" aria-hidden="true" />
-    </>
-  );
-
-  if (sourceUnavailable) {
-    return (
-      <div className="home-hero-side">
-        <figure className="hero-frame" role="status">
-          {decor}
-          <div className="frame-empty">
-            <svg className="frame-empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="14" stroke="#7B8076" strokeWidth="1.1" />
-              <circle cx="9" cy="11" r="2" stroke="#7B8076" strokeWidth="1.1" />
-              <path d="M3 16L8 12L13 16L17 13L21 16" stroke="#7B8076" strokeWidth="1.1" />
-            </svg>
-            <p className="overline">Scientific evidence panel</p>
-            <p className="frame-empty-title">Image records could not be read from the backend.</p>
-            <p className="frame-empty-note">Details are listed above in the source alert.</p>
+            </Link>
+            <Link className="today-card today-card--manual" to="/measurements">
+              <div className="today-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 3v18M3 12h18" stroke="currentColor" strokeLinecap="round" />
+                  <path d="M18 6l-6 6-6-6" stroke="currentColor" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div className="today-card-content">
+                <span className="today-card-count">{todayManual.length}</span>
+                <span className="today-card-label">Manual measurements today</span>
+              </div>
+            </Link>
+            <Link className="today-card today-card--water" to="/experiment/water">
+              <div className="today-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" stroke="currentColor" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div className="today-card-content">
+                <span className="today-card-count">{todayWater.length}</span>
+                <span className="today-card-label">Water events today</span>
+              </div>
+            </Link>
           </div>
-          <span className="frame-tag frame-tag-tl">
-            <span>SPECIMEN</span>
-            <b>—</b>
-          </span>
-          <span className="frame-tag frame-tag-tr">
-            <span>EXPERIMENT DAY</span>
-            <b>—</b>
-          </span>
-          <span className="frame-tag frame-tag-bl">RAW IMAGE</span>
-        </figure>
-      </div>
-    );
-  }
 
-  if (image === null || broken) {
-    return (
-      <div className="home-hero-side">
-        <figure className="hero-frame" role="status">
-          {decor}
-          <div className="frame-empty">
-            <svg className="frame-empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="14" stroke="#7B8076" strokeWidth="1.1" />
-              <circle cx="9" cy="11" r="2" stroke="#7B8076" strokeWidth="1.1" />
-              <path d="M3 16L8 12L13 16L17 13L21 16" stroke="#7B8076" strokeWidth="1.1" />
-            </svg>
-            <p className="overline">Scientific evidence panel</p>
-            <p className="frame-empty-title">No persisted raw image is available yet.</p>
-            <p className="frame-empty-note">Capture an image in the evidence register.</p>
-          </div>
-          <span className="frame-tag frame-tag-tl">
-            <span>SPECIMEN</span>
-            <b>—</b>
-          </span>
-          <span className="frame-tag frame-tag-tr">
-            <span>EXPERIMENT DAY</span>
-            <b>—</b>
-          </span>
-          <span className="frame-tag frame-tag-bl">RAW IMAGE</span>
-        </figure>
-      </div>
-    );
-  }
-
-  return (
-    <div className="home-hero-side">
-      <figure className="hero-frame">
-        {decor}
-        <Link
-          className="hero-frame-link"
-          to={`/images/${image.image_id}`}
-          aria-label={`Open image evidence ${image.image_id} for ${image.plant_id}`}
-        >
-          <img
-            src={imageFileUrl(image.image_id)}
-            alt={`Latest RAW evidence — ${image.image_id} for ${image.plant_id}`}
-            onError={() => setBroken(true)}
-          />
-        </Link>
-        <span className="frame-tag frame-tag-tl">
-          <span>SPECIMEN</span>
-          <b>{image.plant_id}</b>
-        </span>
-        <span className="frame-tag frame-tag-tr">
-          <span>EXPERIMENT DAY</span>
-          <b>{image.experiment_day}</b>
-        </span>
-        <span className="frame-tag frame-tag-bl">RAW IMAGE</span>
-        <span className="frame-tag frame-tag-br">{image.image_id}</span>
-      </figure>
-    </div>
-  );
-}
-
-/**
- * Real latest evidence straight from the persisted records. Sorted by
- * timestamp, newest first; only genuine records are ever displayed. A source
- * that failed to load is shown as unavailable — never as "empty".
- */
-function LatestEvidence({ records, failures }: { records: RecordBundle; failures: SourceFailure[] }) {
-  const failedKeys = useMemo(() => new Set(failures.map((failure) => failure.key)), [failures]);
-  const imagesFailed = failedKeys.has("images");
-  const manualFailed = failedKeys.has("manual");
-
-  const latestImages = useMemo(
-    () =>
-      [...records.images]
-        .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-        .slice(0, 5),
-    [records.images]
-  );
-
-  const latestManual = useMemo(
-    () =>
-      [...records.manual]
-        .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-        .slice(0, 5),
-    [records.manual]
-  );
-
-  return (
-    <section className="overview-evidence" aria-labelledby="evidence-heading">
-      <div className="section-heading-row">
-        <h2 id="evidence-heading" className="section-heading">
-          Latest evidence
-        </h2>
-        <p className="section-heading-note">Newest records by timestamp — read from the backend.</p>
-      </div>
-
-      <div className="evidence-grid">
-        <div className="evidence-column">
-          <h3 className="overline evidence-column-title">Photographic evidence</h3>
-          {imagesFailed ? (
-            <p className="muted-note">Image records could not be read — see the source alert above.</p>
-          ) : latestImages.length === 0 ? (
-            <p className="muted-note">No persisted raw image is available yet.</p>
+          {lastActivity ? (
+            <p className="today-last-activity">
+              Last recorded: <Link to={lastActivity.type === "image" ? `/images` : lastActivity.type === "manual" ? `/measurements` : `/experiment/water`}>{formatDateCZ(new Date(lastActivity.time))}</Link>
+            </p>
           ) : (
-            <ul className="filmstrip">
-              {latestImages.map((image) => (
-                <li key={image.image_id}>
-                  <Link className="filmstrip-item" to={`/images/${image.image_id}`}>
-                    <EvidenceThumb src={imageFileUrl(image.image_id)} />
-                    <span className="filmstrip-id">{image.image_id}</span>
-                    <span className="filmstrip-meta">
-                      {image.plant_id} · day {image.experiment_day}
-                    </span>
+            <p className="today-last-activity empty">No activity recorded yet today.</p>
+          )}
+        </section>
+
+        {/* Quick Actions */}
+        <section className="panel panel-actions" aria-labelledby="actions-heading">
+          <div className="panel-heading-row">
+            <h2 id="actions-heading" className="section-heading">Quick actions</h2>
+          </div>
+          <div className="action-grid">
+            <Link className="action-card action-card--primary" to="/capture">
+              <div className="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
+                  <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div>
+                <h3>Capture photograph</h3>
+                <p>Select a plant, open camera, save evidence.</p>
+              </div>
+            </Link>
+            <Link className="action-card" to="/diary">
+              <div className="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" />
+                  <path d="M16 2v4M8 2v4" stroke="currentColor" strokeWidth="2" />
+                  <path d="M3 10h18" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              </div>
+              <div>
+                <h3>Experiment Diary</h3>
+                <p>Browse historical days, review observations.</p>
+              </div>
+            </Link>
+            <Link className="action-card" to="/plants">
+              <div className="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" />
+                  <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              </div>
+              <div>
+                <h3>Specimen Register</h3>
+                <p>Manage {totalPlants} registered plants across G1/G2/G3.</p>
+              </div>
+            </Link>
+            <Link className="action-card" to="/experiment/verification">
+              <div className="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" strokeWidth="2" />
+                  <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div>
+                <h3>Inspection Board</h3>
+                <p>Verify daily completeness and exceptions.</p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        {/* Latest Evidence */}
+        <section className="panel panel-latest" aria-labelledby="latest-heading">
+          <div className="panel-heading-row">
+            <h2 id="latest-heading" className="section-heading">Latest photographic evidence</h2>
+            <p className="section-heading-note">Newest records by timestamp — read from the backend.</p>
+          </div>
+
+          <div className="latest-filmstrip">
+            {loaded && !failedKeys.has("images") && records.images.length > 0 ? (
+              [...records.images]
+                .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+                .slice(0, 5)
+                .map((image) => (
+                  <Link key={image.image_id} className="latest-item" to={`/images/${image.image_id}`}>
+                    <EvidenceThumb src={imageFileUrl(image.image_id)} plantId={image.plant_id} />
+                    <div className="latest-item-meta">
+                      <span className="latest-item-id">{image.image_id}</span>
+                      <span className="latest-item-plant">{image.plant_id} · Day {image.experiment_day}</span>
+                      <span className="latest-item-time">{formatDateCZ(new Date(image.timestamp))}</span>
+                    </div>
                   </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                ))
+            ) : failedKeys.has("images") ? (
+              <p className="muted-note">Image records could not be read — see the source alert above.</p>
+            ) : (
+              <p className="muted-note">No persisted raw image is available yet. <Link to="/capture">Capture the first photograph</Link>.</p>
+            )}
+          </div>
+        </section>
 
-        <div className="evidence-column">
-          <h3 className="overline evidence-column-title">Recent manual reference</h3>
-          {manualFailed ? (
-            <p className="muted-note">Manual measurements could not be read — see the source alert above.</p>
-          ) : latestManual.length === 0 ? (
-            <p className="muted-note">No manual measurements recorded yet.</p>
-          ) : (
-            <ul className="journal">
-              {latestManual.map((m) => (
-                <li key={m.measurement_id} className="journal-row">
-                  <span className="journal-main">
-                    <Link className="id-link" to={`/measurements/${m.measurement_id}`}>
-                      {m.measurement_id}
-                    </Link>
-                    <span className="cell-sub">
-                      <Link to={`/plants/${m.plant_id}`}>{m.plant_id}</Link> · rep {m.repetition} ·
-                      attempt {m.attempt ?? 1}
-                      {m.plant_height_cm != null ? ` · ${m.plant_height_cm} cm` : ""}
-                    </span>
-                  </span>
-                  <span className={`verdict verdict-${m.measurement_status}`}>
-                    {m.measurement_status.toUpperCase()}
-                  </span>
-                  <span className="journal-date mono-cell">{m.timestamp}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+        {/* Experiment Context */}
+        <section className="panel panel-context" aria-labelledby="context-heading">
+          <div className="panel-heading-row">
+            <h2 id="context-heading" className="section-heading">Experiment context</h2>
+            <p className="section-heading-note">Protocol v1 — locked. See <code>experiment/protocol_v1_locked.md</code>.</p>
+          </div>
+          <dl className="metadata-grid">
+            <div><dt>Species</dt><dd>Phaseolus vulgaris</dd></div>
+            <div><dt>Variety</dt><dd>Aidagold</dd></div>
+            <div><dt>Groups</dt><dd>G1 (100%), G2 (85%), G3 (70%) — relative gravimetric targets</dd></div>
+            <div><dt>Plants</dt><dd>{totalPlants} registered (9 per group)</dd></div>
+            <div><dt>Seeds per pot</dt><dd>3</dd></div>
+            <div><dt>Substrate per pot</dt><dd>72 g (dry)</dd></div>
+            <div><dt>Planned length</dt><dd>Up to 28 experiment days</dd></div>
+            <div><dt>Manual reference</dt><dd>3× per week · 2 repetitions</dd></div>
+            <div><dt>Primary parameter</dt><dd>Plant height (cm)</dd></div>
+            <div><dt>Experiment day</dt><dd>Always operator-entered</dd></div>
+          </dl>
+        </section>
+      </main>
     </section>
   );
 }

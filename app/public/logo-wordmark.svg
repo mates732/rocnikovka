@@ -1,0 +1,43 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 320 64"
+  width="320"
+  height="64"
+  role="img"
+  aria-label="PHYTOMETER"
+>
+  <defs>
+    <linearGradient id="wordmark-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1E2E22" />
+      <stop offset="100%" stop-color="#26401F" />
+    </linearGradient>
+  </defs>
+  <!-- PHYTOMETER wordmark - geometric scientific lettering with botanical O -->
+  <text
+    x="160"
+    y="46"
+    font-family="Space Grotesk, Avenir Next, Helvetica Neue, Arial, sans-serif"
+    font-size="52"
+    font-weight="600"
+    letter-spacing="0.02em"
+    text-anchor="middle"
+    fill="url(#wordmark-gradient)"
+  >
+    PHYTOMETER
+  </text>
+  <!-- Botanical detail in O - subtle leaf/sprout -->
+  <g transform="translate(112, 10)">
+    <path
+      d="M0 0 Q8 -8 16 0 Q8 8 0 0 Z"
+      fill="#365C3A"
+      transform="scale(0.6) translate(2, 4)"
+    />
+    <path
+      d="M8 0 L8 12"
+      stroke="#365C3A"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      transform="scale(0.6) translate(2, 4)"
+    />
+  </g>
+</svg>
