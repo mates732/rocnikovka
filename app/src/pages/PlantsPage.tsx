@@ -12,7 +12,7 @@ import type { ImageService, MeasurementService, PlantService, PositionService, W
 import type { AICVMeasurement, Group, ImageRecord, ManualMeasurement, Plant, PlantStatus, PositionEvent, WaterEvent } from "../types/entities";
 import type { CreatePlantInput } from "../types/write";
 
-const headers = ["Specimen", "Group", "Pot", "Status", "Emergence date"];
+const headers = ["Specimen", "Group", "Exemplar", "Pot", "Status", "Emergence date"];
 
 /** Plant status is rendered as text + mark (never color alone). */
 const PLANT_STATUS_LABELS: Record<PlantStatus, string> = {
@@ -31,6 +31,10 @@ const PLANT_STATUS_MARKS: Record<PlantStatus, string> = {
 
 function registrationDate(plant: Plant): string {
   return plant.created_at ? plant.created_at.slice(0, 10) : "—";
+}
+
+function scientificLabel(plant: Plant): string {
+  return `${plant.group_name} · ${plant.exemplar_id}`;
 }
 
 export async function loadPlants() {
@@ -52,13 +56,15 @@ const TIMESTAMP_SECOND_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PLANT_ID_RE = /^PLT-\d{3}$/;
 const POT_ID_RE = /^POT-\d{3}$/;
-const GROUPS: Group[] = ["G0", "G1", "G2"];
+const GROUPS: Group[] = ["G1", "G2", "G3"];
 const PLANT_STATUSES: PlantStatus[] = ["active", "damaged", "dead", "excluded"];
 
 export type PlantFormValues = {
   plant_id: string;
   pot_id: string;
   group_name: "" | Group;
+  exemplar_id: string;
+  treatment_percentage: number;
   emergence_date: string; // YYYY-MM-DD
   status: "" | PlantStatus;
   created_at: string; // datetime-local value YYYY-MM-DDTHH:MM
@@ -72,6 +78,8 @@ export function emptyPlantFormValues(): PlantFormValues {
     plant_id: "",
     pot_id: "",
     group_name: "",
+    exemplar_id: "",
+    treatment_percentage: 0,
     emergence_date: "",
     status: "",
     created_at: "",
@@ -79,7 +87,9 @@ export function emptyPlantFormValues(): PlantFormValues {
   };
 }
 
-/** Local UX validation mirroring the backend contract (backend remains authoritative). */
+const EXEMPLAR_ID_RE = /^EX(0[1-9])$/;
+const TREATMENT_PERCENTAGES = [100, 85, 70] as const;
+
 export function validatePlantForm(values: PlantFormValues, usedPotIds?: Set<string>): PlantFormIssue[] {
   const issues: PlantFormIssue[] = [];
   const add = (field: string, code: string, message: string) => issues.push({ field, code, message });
@@ -103,7 +113,21 @@ export function validatePlantForm(values: PlantFormValues, usedPotIds?: Set<stri
   if (!values.group_name) {
     add("group_name", "required", "Select a group.");
   } else if (!GROUPS.includes(values.group_name)) {
-    add("group_name", "enum.invalid", "Group must be G0, G1 or G2.");
+    add("group_name", "enum.invalid", "Group must be G1, G2 or G3.");
+  }
+
+  const exemplarId = values.exemplar_id.trim();
+  if (exemplarId === "") {
+    add("exemplar_id", "required", "Exemplar ID is required.");
+  } else if (!EXEMPLAR_ID_RE.test(exemplarId)) {
+    add("exemplar_id", "id.invalid_format", "Exemplar ID must match EX01..EX09.");
+  }
+
+  const treatmentPct = Number(values.treatment_percentage);
+  if (Number.isNaN(treatmentPct) || treatmentPct === 0) {
+    add("treatment_percentage", "required", "Treatment percentage is required.");
+  } else if (!TREATMENT_PERCENTAGES.includes(treatmentPct as 100 | 85 | 70)) {
+    add("treatment_percentage", "enum.invalid", "Treatment percentage must be 100, 85, or 70.");
   }
 
   const emergenceDate = values.emergence_date.trim();
@@ -134,6 +158,8 @@ export function buildPlantInput(values: PlantFormValues): CreatePlantInput {
     plant_id: values.plant_id.trim(),
     pot_id: values.pot_id.trim(),
     group_name: values.group_name as Group,
+    exemplar_id: values.exemplar_id.trim(),
+    treatment_percentage: values.treatment_percentage as 100 | 85 | 70,
     emergence_date: values.emergence_date.trim(),
     status: values.status as PlantStatus,
     created_at: normalizeTimestampToSeconds(values.created_at.trim()),
@@ -157,7 +183,7 @@ export function PlantRegistrationForm({ createPlant, onCreated, existingPlants }
   const [submitting, setSubmitting] = useState(false);
 
   const groupCounts = useMemo(() => {
-    const counts: Record<Group, number> = { G0: 0, G1: 0, G2: 0 };
+    const counts: Record<Group, number> = { G1: 0, G2: 0, G3: 0 };
     for (const p of existingPlants) {
       if (counts[p.group_name] !== undefined) counts[p.group_name]++;
     }
@@ -254,8 +280,39 @@ export function PlantRegistrationForm({ createPlant, onCreated, existingPlants }
               </option>
             ))}
           </select>
-          <span className="form-hint">G0 = 100% water target, G1 = 85%, G2 = 70%. Assignment follows randomization protocol.</span>
+          <span className="form-hint">G1 = 100% water target, G2 = 85%, G3 = 70%. Assignment follows randomization protocol.</span>
           {renderIssues("group_name")}
+        </label>
+
+        <label className="form-field" htmlFor="plant-exemplar-id">
+          <span className="form-label">
+            Exemplar ID <span className="form-required" aria-hidden="true">*</span>
+          </span>
+          <input
+            id="plant-exemplar-id"
+            type="text"
+            name="exemplar_id"
+            placeholder="EX01"
+            value={values.exemplar_id}
+            onChange={handleFieldChange}
+            disabled={submitting}
+          />
+          <span className="form-hint">Immutable after creation; format EX01..EX09.</span>
+          {renderIssues("exemplar_id")}
+        </label>
+
+        <label className="form-field" htmlFor="plant-treatment-percentage">
+          <span className="form-label">
+            Treatment % <span className="form-required" aria-hidden="true">*</span>
+          </span>
+          <select id="plant-treatment-percentage" name="treatment_percentage" value={values.treatment_percentage} onChange={handleFieldChange} disabled={submitting}>
+            <option value={0}>Select treatment percentage</option>
+            <option value={100}>100% (G1)</option>
+            <option value={85}>85% (G2)</option>
+            <option value={70}>70% (G3)</option>
+          </select>
+          <span className="form-hint">Protocol v1: G1=100%, G2=85%, G3=70%.</span>
+          {renderIssues("treatment_percentage")}
         </label>
 
         <label className="form-field" htmlFor="plant-emergence-date">
@@ -429,6 +486,7 @@ export function PlantsPage({ services: deps = services }: PlantsPageProps = {}) 
               <td>
                 <span className={`chip chip-group chip-group-${plant.group_name}`}>{plant.group_name}</span>
               </td>
+              <td className="mono-cell">{plant.exemplar_id}</td>
               <td className="mono-cell">{plant.pot_id}</td>
               <td>
                 <span className={`plant-status plant-status-${plant.status}`}>
@@ -608,7 +666,7 @@ export function PlantDetailPage({ services: deps = services }: PlantDetailPagePr
   }, [timeline]);
 
   const subtitle = plant
-    ? `${PLANT_STATUS_LABELS[plant.status]} specimen · group ${plant.group_name} · pot ${plant.pot_id}`
+    ? `${PLANT_STATUS_LABELS[plant.status]} specimen · ${scientificLabel(plant)} · pot ${plant.pot_id}`
     : "Specimen record";
 
   return (
@@ -626,7 +684,7 @@ export function PlantDetailPage({ services: deps = services }: PlantDetailPagePr
         <>
           <PageHeader
             eyebrow="Specimen"
-            title={plant.plant_id}
+            title={scientificLabel(plant)}
             description={subtitle}
             titleId="plant-detail-title"
             actions={
@@ -638,21 +696,28 @@ export function PlantDetailPage({ services: deps = services }: PlantDetailPagePr
 
           <div className="specimen-plate" aria-label={`Registered metadata for ${plant.plant_id}`}>
             <span className="specimen-plate-item">
-              <span className="specimen-plate-label">Status</span>
-              <span className={`plant-status plant-status-${plant.status} plant-status-lg`}>
-                <span className="plant-status-mark" aria-hidden="true">
-                  {PLANT_STATUS_MARKS[plant.status]}
-                </span>
-                {plant.status}
-              </span>
+              <span className="specimen-plate-label">Scientific ID</span>
+              <span className="mono-cell">{scientificLabel(plant)}</span>
+            </span>
+            <span className="specimen-plate-item">
+              <span className="specimen-plate-label">Treatment</span>
+              <span>{plant.treatment_percentage}%</span>
             </span>
             <span className="specimen-plate-item">
               <span className="specimen-plate-label">Group</span>
               <span className={`chip chip-group chip-group-${plant.group_name}`}>{plant.group_name}</span>
             </span>
             <span className="specimen-plate-item">
+              <span className="specimen-plate-label">Exemplar</span>
+              <span className="mono-cell">{plant.exemplar_id}</span>
+            </span>
+            <span className="specimen-plate-item">
               <span className="specimen-plate-label">Pot</span>
               <span className="mono-cell">{plant.pot_id}</span>
+            </span>
+            <span className="specimen-plate-item">
+              <span className="specimen-plate-label">Internal ID</span>
+              <span className="mono-cell">{plant.plant_id}</span>
             </span>
             <span className="specimen-plate-item">
               <span className="specimen-plate-label">Emerged</span>

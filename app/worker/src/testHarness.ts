@@ -71,10 +71,13 @@ export class SqliteD1 implements D1Like {
   /** Applies the real deployment migrations, in order. */
   static fromMigrations(): SqliteD1 {
     const db = new Database(":memory:");
-    db.pragma("foreign_keys = ON");
+    // Disable foreign keys during migration to allow DROP/CREATE of tables with constraints
+    db.pragma("foreign_keys = OFF");
     for (const migration of loadMigrations()) {
       db.exec(migration);
     }
+    // Re-enable foreign keys for test execution
+    db.pragma("foreign_keys = ON");
     return new SqliteD1(db);
   }
 }

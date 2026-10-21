@@ -27,10 +27,10 @@ test("Day 0 plan: 72 g substrate per pot, 1 944 g total, never an assembled mass
 });
 
 test("Day 0 plan: 9 pots per group", () => {
-  assert.equal(DAY0_PLAN.groups.G0, 9);
   assert.equal(DAY0_PLAN.groups.G1, 9);
   assert.equal(DAY0_PLAN.groups.G2, 9);
-  assert.equal(DAY0_PLAN.groups.G0 + DAY0_PLAN.groups.G1 + DAY0_PLAN.groups.G2, 27);
+  assert.equal(DAY0_PLAN.groups.G3, 9);
+  assert.equal(DAY0_PLAN.groups.G1 + DAY0_PLAN.groups.G2 + DAY0_PLAN.groups.G3, 27);
 });
 
 test("Day 0 plan: scale resolution is 1 g, so sub-gram precision is not implied", () => {
@@ -38,20 +38,20 @@ test("Day 0 plan: scale resolution is 1 g, so sub-gram precision is not implied"
 });
 
 test("Day 0 plan: group assignment is 9/9/9 across POT-001..POT-027", () => {
-  const counts = { G0: 0, G1: 0, G2: 0 };
+  const counts = { G1: 0, G2: 0, G3: 0 };
   for (let n = 1; n <= 27; n++) {
     counts[groupForPotNumber(n)] += 1;
   }
-  assert.equal(counts.G0, 9);
   assert.equal(counts.G1, 9);
   assert.equal(counts.G2, 9);
+  assert.equal(counts.G3, 9);
 
-  assert.equal(groupForPotNumber(1), "G0");
-  assert.equal(groupForPotNumber(9), "G0");
-  assert.equal(groupForPotNumber(10), "G1");
-  assert.equal(groupForPotNumber(18), "G1");
-  assert.equal(groupForPotNumber(19), "G2");
-  assert.equal(groupForPotNumber(27), "G2");
+  assert.equal(groupForPotNumber(1), "G1");
+  assert.equal(groupForPotNumber(9), "G1");
+  assert.equal(groupForPotNumber(10), "G2");
+  assert.equal(groupForPotNumber(18), "G2");
+  assert.equal(groupForPotNumber(19), "G3");
+  assert.equal(groupForPotNumber(27), "G3");
 });
 
 test("Day 0 plan: pot ids use the POT-XXX zero-padded convention", () => {
@@ -89,18 +89,18 @@ test("Day 0 plan: three seeds in one pot stays one experimental unit", () => {
 });
 
 test("Day 0 plan: planned watering volumes are 75/64/53 ml per pot", () => {
-  assert.equal(DAY0_PLAN.plannedWaterMlPerPot.G0, 75);
-  assert.equal(DAY0_PLAN.plannedWaterMlPerPot.G1, 64);
-  assert.equal(DAY0_PLAN.plannedWaterMlPerPot.G2, 53);
-  assert.equal(plannedWaterMlForGroup("G0"), 75);
-  assert.equal(plannedWaterMlForGroup("G1"), 64);
-  assert.equal(plannedWaterMlForGroup("G2"), 53);
+  assert.equal(DAY0_PLAN.plannedWaterMlPerPot.G1, 75);
+  assert.equal(DAY0_PLAN.plannedWaterMlPerPot.G2, 64);
+  assert.equal(DAY0_PLAN.plannedWaterMlPerPot.G3, 53);
+  assert.equal(plannedWaterMlForGroup("G1"), 75);
+  assert.equal(plannedWaterMlForGroup("G2"), 64);
+  assert.equal(plannedWaterMlForGroup("G3"), 53);
 });
 
 test("Day 0 plan: planned volumes map to the physical-config fields", () => {
-  assert.equal(plannedWaterField("G0"), "planned_water_ml_g0");
   assert.equal(plannedWaterField("G1"), "planned_water_ml_g1");
   assert.equal(plannedWaterField("G2"), "planned_water_ml_g2");
+  assert.equal(plannedWaterField("G3"), "planned_water_ml_g3");
 });
 
 test("Day 0 plan: planned volumes never become gravimetric targets", () => {

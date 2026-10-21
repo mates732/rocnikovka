@@ -19,6 +19,8 @@ const persisted: Plant = {
   plant_id: "PLT-001",
   pot_id: "POT-001",
   group_name: "G1",
+  exemplar_id: "EX01",
+  treatment_percentage: 100,
   emergence_date: "2025-03-01",
   status: "active",
   created_at: "2025-03-01T08:00:00",
@@ -66,6 +68,8 @@ async function fillValid(renderer: Renderer): Promise<void> {
     ["plant_id", "PLT-001"],
     ["pot_id", "POT-001"],
     ["group_name", "G1"],
+    ["exemplar_id", "EX01"],
+    ["treatment_percentage", "100"],
     ["emergence_date", "2025-03-01"],
     ["status", "active"],
     ["created_at", "2025-03-01T08:00"],
@@ -105,6 +109,8 @@ function validValues(overrides: Partial<Record<string, string>> = {}) {
     plant_id: "PLT-001",
     pot_id: "POT-001",
     group_name: "G1",
+    exemplar_id: "EX01",
+    treatment_percentage: 100,
     emergence_date: "2025-03-01",
     status: "active",
     created_at: "2025-03-01T08:00",
@@ -146,7 +152,7 @@ test("F) pot_id validation mirrors the backend POT-XXX format", () => {
   );
 });
 
-test("G) group handling uses exactly the backend enum G0/G1/G2", () => {
+test("G) group handling uses exactly the backend enum G1/G2/G3", () => {
   assert.deepEqual(validatePlantForm(validValues({ group_name: "G2" })), [], "valid group passes");
   const missing = validatePlantForm(validValues({ group_name: "" })).find((i) => i.field === "group_name");
   assert.equal(missing?.code, "required");
@@ -190,6 +196,8 @@ test("K) payload contains exactly the supported CreatePlantInput fields", () => 
     plant_id: "PLT-001",
     pot_id: "POT-001",
     group_name: "G1",
+    exemplar_id: "EX01",
+    treatment_percentage: 100,
     emergence_date: "2025-03-01",
     status: "active",
     created_at: "2025-03-01T08:00:00",
@@ -198,11 +206,13 @@ test("K) payload contains exactly the supported CreatePlantInput fields", () => 
   assert.deepEqual(Object.keys(withNotes).sort(), [
     "created_at",
     "emergence_date",
+    "exemplar_id",
     "group_name",
     "notes",
     "plant_id",
     "pot_id",
     "status",
+    "treatment_percentage",
   ]);
   const withoutNotes = buildPlantInput(validValues({ notes: "  " }) as any);
   assert.equal("notes" in withoutNotes, false, "empty notes are omitted");
@@ -217,6 +227,8 @@ test("D) required-field validation blocks submission and shows local messages", 
     "Plant ID is required.",
     "Pot ID is required.",
     "Select a group.",
+    "Exemplar ID is required.",
+    "Treatment percentage is required.",
     "Emergence date is required.",
     "Select a status.",
     "Registration time is required.",
@@ -234,6 +246,8 @@ test("C) the form renders exactly the supported fields with visible labels", () 
     "Plant ID",
     "Pot ID",
     "Group",
+    "Exemplar ID",
+    "Treatment %",
     "Emergence date",
     "Status",
     "Registration time",
@@ -242,7 +256,7 @@ test("C) the form renders exactly the supported fields with visible labels", () 
   ]) {
     assert.ok(html.includes(label), `expected label/text "${label}"`);
   }
-  for (const name of ["plant_id", "pot_id", "group_name", "emergence_date", "status", "created_at", "notes"]) {
+  for (const name of ["plant_id", "pot_id", "group_name", "exemplar_id", "treatment_percentage", "emergence_date", "status", "created_at", "notes"]) {
     assert.ok(fieldByName(renderer, name), `field "${name}" must exist`);
   }
   // No server-owned/derived fields are exposed.
@@ -261,7 +275,7 @@ test("V) no fake production data — the form has no default plant/pot ids, grou
   const groupValues = fieldByName(renderer, "group_name")
     .findAll((n: any) => n.type === "option")
     .map((o: any) => o.props.value);
-  assert.deepEqual(groupValues, ["", "G0", "G1", "G2"], "only the real backend groups are offered");
+  assert.deepEqual(groupValues, ["", "G1", "G2", "G3"], "only the real backend groups are offered");
   const statusValues = fieldByName(renderer, "status")
     .findAll((n: any) => n.type === "option")
     .map((o: any) => o.props.value);
@@ -287,6 +301,8 @@ test("Q) successful creation resets the form", async () => {
   assert.equal(fieldByName(renderer, "plant_id").props.value, "", "plant id resets");
   assert.equal(fieldByName(renderer, "pot_id").props.value, "", "pot id resets");
   assert.equal(fieldByName(renderer, "group_name").props.value, "", "group resets");
+  assert.equal(fieldByName(renderer, "exemplar_id").props.value, "", "exemplar id resets");
+  assert.equal(fieldByName(renderer, "treatment_percentage").props.value, 0, "treatment percentage resets");
   assert.equal(fieldByName(renderer, "status").props.value, "", "status resets");
   assert.equal(fieldByName(renderer, "notes").props.value, "", "notes reset");
 });
@@ -303,6 +319,8 @@ test("R) failed submission preserves every entered value and renders the ApiErro
   const html = rendered(renderer);
   assert.equal(fieldByName(renderer, "plant_id").props.value, "PLT-001", "entered value preserved");
   assert.equal(fieldByName(renderer, "pot_id").props.value, "POT-001", "entered value preserved");
+  assert.equal(fieldByName(renderer, "exemplar_id").props.value, "EX01", "entered value preserved");
+  assert.equal(fieldByName(renderer, "treatment_percentage").props.value, "100", "entered value preserved");
   assert.equal(fieldByName(renderer, "notes").props.value, "Sown from the same seed batch", "entered value preserved");
   assert.ok(html.includes("Invalid input"), "backend message rendered");
   assert.ok(!html.includes("registered."), "no success message on failure");
@@ -310,7 +328,7 @@ test("R) failed submission preserves every entered value and renders the ApiErro
 
 test("S) a 400 validation ApiError renders structured field-level issues", async () => {
   const apiError = new ApiError(400, "input.invalid", "Invalid input", [
-    { field: "group_name", code: "enum.invalid", message: "group_name must be G0, G1 or G2" },
+    { field: "group_name", code: "enum.invalid", message: "group_name must be G1, G2 or G3" },
   ]);
   const { renderer } = renderForm(async () => {
     throw apiError;
@@ -321,7 +339,7 @@ test("S) a 400 validation ApiError renders structured field-level issues", async
   assert.ok(html.includes("Validation failed"), "status-aware label");
   assert.ok(html.includes("group_name"), "issue field rendered");
   assert.ok(html.includes("enum.invalid"), "issue code rendered");
-  assert.ok(html.includes("group_name must be G0, G1 or G2"), "issue message rendered");
+  assert.ok(html.includes("group_name must be G1, G2 or G3"), "issue message rendered");
 });
 
 test("T) a 409 id.duplicate conflict is rendered correctly and stays retryable", async () => {
@@ -406,7 +424,7 @@ test("A/B) the register-plant button opens an accessible inline panel from Plant
   assert.equal(toggle[0].props["aria-expanded"], true, "toggle exposes expanded state");
   const panel = renderer.root.findAll((n: any) => n.props?.["aria-label"] === "Register a plant");
   assert.equal(panel.length, 1, "panel has an accessible name");
-  for (const name of ["plant_id", "pot_id", "group_name", "emergence_date", "status", "created_at", "notes"]) {
+  for (const name of ["plant_id", "pot_id", "group_name", "exemplar_id", "treatment_percentage", "emergence_date", "status", "created_at", "notes"]) {
     const field = fieldByName(renderer, name);
     assert.ok(field.props.id, `field ${name} has an id for label association`);
     assert.ok(rendered(renderer).includes(name.replace(/_/g, " ")) || html.includes("Plant ID"), `label text present for ${name}`);
@@ -450,14 +468,14 @@ test("L/M) the page uses the injected plantService — no direct fetch — and r
 test("W) existing list behavior remains intact — plants render with links and the empty state works", async () => {
   const renderer = renderPage({
     plantService: {
-      listPlants: async () => [persisted, { ...persisted, plant_id: "PLT-002", pot_id: "POT-002", group_name: "G0" }],
+      listPlants: async () => [persisted, { ...persisted, plant_id: "PLT-002", pot_id: "POT-002", group_name: "G2", exemplar_id: "EX02", treatment_percentage: 85 }],
       createPlant: async () => persisted,
     },
   });
   await act(async () => {});
   const html = rendered(renderer);
   assert.ok(html.includes("PLT-001") && html.includes("PLT-002"), "both plants render");
-  assert.ok(html.includes("G1") && html.includes("G0"), "group values render");
+  assert.ok(html.includes("G1") && html.includes("G2"), "group values render");
   assert.ok(html.includes("active"), "status renders");
   assert.equal(renderer.root.findAll((n: any) => n.type === "a" && n.props.href === "/plants/PLT-001").length, 1, "plant detail links intact");
 });

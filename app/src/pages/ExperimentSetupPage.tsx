@@ -8,7 +8,7 @@ import { services } from "../data/adapters";
 import type { PlantService } from "../services/interfaces";
 import type { Plant, Group } from "../types/entities";
 
-const PROTOCOL_GROUPS: Group[] = ["G0", "G1", "G2"];
+const PROTOCOL_GROUPS: Group[] = ["G1", "G2", "G3"];
 const PLANNED_PER_GROUP = 15;
 const MINIMUM_PER_GROUP = 12;
 const PRACTICAL_PER_GROUP = 9;
@@ -174,7 +174,7 @@ export default function ExperimentSetupPage({ services: deps = services }: Setup
           <div><dt>Research question</dt><dd>Can computer vision and AI reliably automate plant growth measurements?</dd></div>
           <div><dt>Species</dt><dd>Phaseolus vulgaris (common bean)</dd></div>
           <div><dt>Cultivar</dt><dd>Aidagold (to be confirmed at sowing)</dd></div>
-          <div><dt>Experimental groups</dt><dd>G0 (100%), G1 (85%), G2 (70%) — relative gravimetric targets</dd></div>
+          <div><dt>Experimental groups</dt><dd>G1 (100%), G2 (85%), G3 (70%) — relative gravimetric targets</dd></div>
           <div><dt>Watering protocol</dt><dd>Daily gravimetric weighing, top-up to group target, weekly drift correction vs G0</dd></div>
           <div><dt>Primary endpoint</dt><dd>Plant height (cm) — vertical distance from soil reference to apex</dd></div>
           <div><dt>Secondary endpoint</dt><dd>Projected shoot area (cm²)</dd></div>

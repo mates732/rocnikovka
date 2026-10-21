@@ -43,10 +43,10 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
   const [potDiameterStr, setPotDiameterStr] = useState<string>("");
   const [potHeightStr, setPotHeightStr] = useState<string>("");
   const [potVolumeStr, setPotVolumeStr] = useState<string>("");
-  const [plannedWater, setPlannedWater] = useState<{ G0: string; G1: string; G2: string }>({
-    G0: "",
+  const [plannedWater, setPlannedWater] = useState<{ G1: string; G2: string; G3: string }>({
     G1: "",
     G2: "",
+    G3: "",
   });
   const [formError, setFormError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -102,9 +102,9 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
     setPotHeightStr(cfg.pot_height_cm != null ? String(cfg.pot_height_cm) : "");
     setPotVolumeStr(cfg.pot_volume_l != null ? String(cfg.pot_volume_l) : "");
     setPlannedWater({
-      G0: cfg.planned_water_ml_g0 != null ? String(cfg.planned_water_ml_g0) : "",
       G1: cfg.planned_water_ml_g1 != null ? String(cfg.planned_water_ml_g1) : "",
       G2: cfg.planned_water_ml_g2 != null ? String(cfg.planned_water_ml_g2) : "",
+      G3: cfg.planned_water_ml_g3 != null ? String(cfg.planned_water_ml_g3) : "",
     });
   };
 
@@ -122,9 +122,9 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
       camera_distance_cm: distanceStr.trim() === "" ? undefined : Number(distanceStr),
       camera_angle_deg: angleStr.trim() === "" ? undefined : Number(angleStr),
       // PLANNED volumes only — never an actual watering event, never a target mass.
-      planned_water_ml_g0: plannedWater.G0.trim() === "" ? undefined : Number(plannedWater.G0),
       planned_water_ml_g1: plannedWater.G1.trim() === "" ? undefined : Number(plannedWater.G1),
       planned_water_ml_g2: plannedWater.G2.trim() === "" ? undefined : Number(plannedWater.G2),
+      planned_water_ml_g3: plannedWater.G3.trim() === "" ? undefined : Number(plannedWater.G3),
       lighting_config: formValues.lighting_config?.trim() || undefined,
       background: formValues.background?.trim() || undefined,
       image_resolution: formValues.image_resolution?.trim() || undefined,
@@ -299,7 +299,7 @@ export function Day0PhysicalConfigPage({ services: deps = services }: Day0Physic
           <div className="form-field-group span-2" role="group" aria-labelledby="planned-water-heading">
             <span className="form-label" id="planned-water-heading">Plánovaný objem zálivky na květináč (ml)</span>
             <div className="form-grid planned-water-grid">
-              {(["G0", "G1", "G2"] as const).map((group) => (
+              {(["G1", "G2", "G3"] as const).map((group) => (
                 <label className="form-field" key={group} htmlFor={`cfg-planned-water-${group}`}>
                   <span className="form-label">
                     {group} <span className="form-required" aria-hidden="true">*</span>

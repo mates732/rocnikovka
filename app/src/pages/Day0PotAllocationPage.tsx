@@ -43,11 +43,11 @@ type Day0PotAllocationPageDeps = {
 
 type Day0PotAllocationPageProps = { services?: Day0PotAllocationPageDeps };
 
-const GROUPS: Group[] = ["G0", "G1", "G2"];
+const GROUPS: Group[] = ["G1", "G2", "G3"];
 const SOWING_STATUSES: SowingStatus[] = ["pending", "sown", "failed"];
 const EMERGENCE_STATUSES: EmergenceStatus[] = ["not_sown", "sown", "awaiting", "emerged", "uncertain", "failed"];
 const EXEMPLAR_IDS: ExemplarId[] = ["EX01", "EX02", "EX03", "EX04", "EX05", "EX06", "EX07", "EX08", "EX09"] as const;
-const TREATMENT_PERCENTAGES: Record<Group, TreatmentPercentage> = { G0: 100, G1: 85, G2: 70 };
+const TREATMENT_PERCENTAGES: Record<Group, TreatmentPercentage> = { G1: 100, G2: 85, G3: 70 };
 
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000).toString().padStart(3, "0")}`;
@@ -236,9 +236,9 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
   const bulkAllocate = async () => {
     const planText =
       `Vytvořit ${DAY0_PLAN.pots} květináčů?\n\n` +
-      `G0: ${DAY0_PLAN.groups.G0} květináčů (${potIdFor(1)} až ${potIdFor(DAY0_PLAN.groups.G0)})\n` +
-      `G1: ${DAY0_PLAN.groups.G1} květináčů (${potIdFor(DAY0_PLAN.groups.G0 + 1)} až ${potIdFor(DAY0_PLAN.groups.G0 + DAY0_PLAN.groups.G1)})\n` +
-      `G2: ${DAY0_PLAN.groups.G2} květináčů (${potIdFor(DAY0_PLAN.groups.G0 + DAY0_PLAN.groups.G1 + 1)} až ${potIdFor(DAY0_PLAN.pots)})\n\n` +
+      `G1: ${DAY0_PLAN.groups.G1} květináčů (${potIdFor(1)} až ${potIdFor(DAY0_PLAN.groups.G1)})\n` +
+      `G2: ${DAY0_PLAN.groups.G2} květináčů (${potIdFor(DAY0_PLAN.groups.G1 + 1)} až ${potIdFor(DAY0_PLAN.groups.G1 + DAY0_PLAN.groups.G2)})\n` +
+      `G3: ${DAY0_PLAN.groups.G3} květináčů (${potIdFor(DAY0_PLAN.groups.G1 + DAY0_PLAN.groups.G2 + 1)} až ${potIdFor(DAY0_PLAN.pots)})\n\n` +
       `Substrát: ${DAY0_PLAN.substratePerPotG} g na květináč (${DAY0_PLAN.totalSubstrateG.toLocaleString("cs-CZ")} g celkem) — pouze substrát, ne celková hmotnost\n` +
       `Plánovaných semen: ${DAY0_PLAN.seedsPerPot} na květináč (${DAY0_PLAN.plannedSeeds} celkem)\n\n` +
       `Květináč zůstává experimentální jednotkou. Vytvoří se jako „pending / not_sown" — ` +
@@ -362,9 +362,9 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
     );
   }
 
-  const g0Count = allocations.filter((a) => a.group_name === "G0").length;
   const g1Count = allocations.filter((a) => a.group_name === "G1").length;
   const g2Count = allocations.filter((a) => a.group_name === "G2").length;
+  const g3Count = allocations.filter((a) => a.group_name === "G3").length;
   const totalSubstrate = allocations.reduce((sum, a) => sum + (a.substrate_mass_g ?? 0), 0);
   const totalPlannedSeeds = allocations.reduce((sum, a) => sum + (a.seed_count ?? 0), 0);
   const recordedSown = allocations.filter((a) => a.seeds_sown != null);
@@ -396,9 +396,9 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
           <h2 id="confirmation-summary">Potvrzovací souhrn</h2>
         </div>
         <dl className="metadata-grid">
-          <div><dt>G0 (100%)</dt><dd>{g0Count} květináčů</dd></div>
-          <div><dt>G1 (85%)</dt><dd>{g1Count} květináčů</dd></div>
-          <div><dt>G2 (70%)</dt><dd>{g2Count} květináčů</dd></div>
+          <div><dt>G1 (100%)</dt><dd>{g1Count} květináčů</dd></div>
+          <div><dt>G2 (85%)</dt><dd>{g2Count} květináčů</dd></div>
+          <div><dt>G3 (70%)</dt><dd>{g3Count} květináčů</dd></div>
           <div><dt>Celkem květináčů</dt><dd>{allocations.length} z {DAY0_PLAN.pots}</dd></div>
           <div><dt>Substrát na květináč</dt><dd>{DAY0_PLAN.substratePerPotG} g (pouze substrát)</dd></div>
           <div><dt>Celkový substrát</dt><dd>{totalSubstrate.toLocaleString("cs-CZ")} g (plán: {DAY0_PLAN.totalSubstrateG.toLocaleString("cs-CZ")} g)</dd></div>
@@ -406,7 +406,7 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
           <div><dt>Skutečně vysetá semena</dt><dd>{recordedSown.length > 0 ? totalSown : "nezadáno"}</dd></div>
           <div><dt>Vzešlé semenáčky</dt><dd>{recordedEmerged.length > 0 ? totalEmerged : "nezadáno"}</dd></div>
         </dl>
-        {allocations.length === 27 && g0Count === 9 && g1Count === 9 && g2Count === 9 ? (
+        {allocations.length === 27 && g1Count === 9 && g2Count === 9 && g3Count === 9 ? (
           <div className="day0-success">
             <StatusBadge status="PASS" />
             <strong>Alokace odpovídá plánu:</strong> 27 květináčů, 9 na skupinu.
@@ -414,7 +414,7 @@ export function Day0PotAllocationPage({ services: deps = services }: Day0PotAllo
         ) : (
           <div className="day0-warning-block warn">
             <StatusBadge status="WARN" />
-            <strong>Alokace neodpovídá plánu:</strong> potřebný stav je G0=9, G1=9, G2=9, celkem 27.
+            <strong>Alokace neodpovídá plánu:</strong> potřebný stav je G1=9, G2=9, G3=9, celkem 27.
           </div>
         )}
       </section>
