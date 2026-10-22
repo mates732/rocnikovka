@@ -71,7 +71,7 @@ export type ImageFormValues = {
   plant_id: string;
   experiment_day: string;
   timestamp: string; // datetime-local value YYYY-MM-DDTHH:MM
-  camera_id: string;
+  camera_id?: string;
   image_quality_status: "" | ImageQualityStatus;
   calibration_status: "" | CalibrationStatus;
   cal_ref_id: string;
@@ -117,10 +117,6 @@ export function validateImageForm(values: ImageFormValues, file: File | null): I
     add("timestamp", "timestamp.invalid_format", "Timestamp must look like YYYY-MM-DDTHH:MM.");
   }
 
-  if (values.camera_id.trim() === "") {
-    add("camera_id", "required", "Camera ID is required.");
-  }
-
   if (!values.image_quality_status) {
     add("image_quality_status", "required", "Select an image quality status.");
   } else if (!QUALITY_STATUSES.includes(values.image_quality_status)) {
@@ -158,10 +154,11 @@ export function buildUploadInput(values: ImageFormValues, file: File): UploadIma
     plant_id: values.plant_id,
     timestamp: normalizeTimestampToSeconds(values.timestamp.trim()),
     experiment_day: Number(values.experiment_day),
-    camera_id: values.camera_id.trim(),
     image_quality_status: values.image_quality_status as ImageQualityStatus,
     calibration_status: values.calibration_status as CalibrationStatus,
   };
+  const cameraId = values.camera_id?.trim();
+  if (cameraId) input.camera_id = cameraId;
   const calRefId = values.cal_ref_id.trim();
   if (calRefId) input.cal_ref_id = calRefId;
   const failureCode = values.failure_code;
@@ -298,10 +295,10 @@ export function ImageUploadForm({ plants, uploadImage, verifyImageFile, onCreate
 
         <label className="form-field" htmlFor="img-camera">
           <span className="form-label">
-            Camera ID <span className="form-required" aria-hidden="true">*</span>
+            Camera ID
           </span>
           <input id="img-camera" type="text" name="camera_id" value={values.camera_id} onChange={handleFieldChange} disabled={submitting} />
-          <span className="form-hint">Explicitly entered; never defaulted.</span>
+          <span className="form-hint">Optional. Explicitly entered; never defaulted.</span>
           {renderIssues("camera_id")}
         </label>
 

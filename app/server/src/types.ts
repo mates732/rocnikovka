@@ -84,7 +84,7 @@ export interface ImageRecord {
   timestamp: string;
   experiment_day: number;
   image_path: string;
-  camera_id: string;
+  camera_id?: string;
   image_quality_status: ImageQualityStatus;
   calibration_status: CalibrationStatus;
   cal_ref_id?: string;

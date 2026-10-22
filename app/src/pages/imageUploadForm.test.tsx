@@ -164,11 +164,13 @@ test("I/J) timestamp normalizes to :00 with no timezone/UTC/Z conversion", () =>
   assert.ok(!input.timestamp.includes("Z") && !input.timestamp.includes("+"), "no timezone conversion");
 });
 
-test("K) camera_id is required and never defaulted", () => {
+test("K) camera_id is optional and not defaulted", () => {
   const missing = validateImageForm(validValues({ camera_id: "" }), makeFile()).find((i) => i.field === "camera_id");
-  assert.equal(missing?.code, "required");
+  assert.equal(missing, undefined, "empty camera_id should not produce an error");
   const whitespace = validateImageForm(validValues({ camera_id: "  " }), makeFile()).find((i) => i.field === "camera_id");
-  assert.equal(whitespace?.code, "required");
+  assert.equal(whitespace, undefined, "whitespace-only camera_id should not produce an error");
+  const withValue = validateImageForm(validValues({ camera_id: "CAM-01" }), makeFile()).find((i) => i.field === "camera_id");
+  assert.equal(withValue, undefined, "valid camera_id should not produce an error");
 });
 
 test("L) image quality uses exactly the backend enum PASS/WARN/FAIL", () => {
@@ -272,7 +274,6 @@ test("F) required-field validation blocks submission and shows local messages", 
     "Select a plant.",
     "Experiment day is required.",
     "Timestamp is required.",
-    "Camera ID is required.",
     "Select an image quality status.",
     "Select a calibration status.",
     "Select an image file.",
@@ -336,7 +337,6 @@ test("V) form resets only after success (fields cleared, plant kept, file cleare
   assert.equal(fieldByName(renderer, "plant_id").props.value, "PLT-001", "plant is kept for consecutive captures");
   assert.equal(fieldByName(renderer, "experiment_day").props.value, "", "day resets");
   assert.equal(fieldByName(renderer, "timestamp").props.value, "", "timestamp resets");
-  assert.equal(fieldByName(renderer, "camera_id").props.value, "", "camera resets");
   assert.equal(fieldByName(renderer, "image_quality_status").props.value, "", "quality resets");
   assert.equal(fieldByName(renderer, "calibration_status").props.value, "", "calibration resets");
   assert.equal(fieldByName(renderer, "notes").props.value, "", "notes reset");
@@ -347,7 +347,7 @@ test("V) form resets only after success (fields cleared, plant kept, file cleare
 
 test("W) failed submission preserves every entered value and renders the ApiError", async () => {
   const apiError = new ApiError(400, "image.validation_failed", "Invalid image metadata", [
-    { field: "camera_id", code: "required.missing", message: "camera_id is required" },
+    { field: "experiment_day", code: "number.out_of_range", message: "experiment_day must be >= 1" },
   ]);
   const { renderer } = renderForm({
     uploadImpl: async () => {
