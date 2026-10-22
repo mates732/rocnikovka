@@ -84,8 +84,17 @@
   --shadow-focus: 0 0 0 3px rgba(54, 92, 58, 0.2);
 
   /* Layout */
-  --sidebar-width: 240px;
-  --content-max: 1240px;
+  --sidebar-width: 260px;
+  --sidebar-width-collapsed: 72px;
+  --content-max: 1400px;
+  --content-max-wide: 1600px;
+  --header-height: 56px;
+
+  /* Breakpoints */
+  --bp-mobile: 480px;
+  --bp-tablet: 768px;
+  --bp-desktop: 1024px;
+  --bp-wide: 1440px;
 
   /* Motion */
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);

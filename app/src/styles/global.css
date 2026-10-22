@@ -82,6 +82,30 @@ code {
   background: var(--surface);
   border-right: 1px solid var(--border);
   overflow-y: auto;
+  transition: width var(--dur-base) var(--ease);
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+.sidebar.collapsed .sidebar-brand-copy,
+.sidebar.collapsed .sidebar-section h2,
+.sidebar.collapsed .nav-link span:not(.nav-link-active::before),
+.sidebar.collapsed .brand-sub,
+.sidebar.collapsed .sidebar-foot,
+.sidebar.collapsed .tab-count {
+  display: none;
+}
+
+.sidebar.collapsed .nav-link {
+  justify-content: center;
+  padding: 0.5rem var(--space-2);
+}
+
+.sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  padding: var(--space-4) var(--space-2);
 }
 
 .sidebar-brand {
@@ -228,6 +252,8 @@ code {
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   padding: var(--space-3) var(--space-6);
+  height: var(--header-height);
+  flex-shrink: 0;
 }
 
 .topbar-brand {
@@ -319,9 +345,28 @@ code {
   padding: var(--space-6) var(--space-6) var(--space-8);
 }
 
+@media (max-width: var(--bp-tablet)) {
+  .app-content {
+    padding: var(--space-4) var(--space-4) var(--space-6);
+  }
+}
+
+@media (max-width: var(--bp-mobile)) {
+  .app-content {
+    padding: var(--space-3) var(--space-3) var(--space-5);
+  }
+}
+
 .page {
   max-width: var(--content-max);
   margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: var(--bp-wide)) {
+  .page {
+    max-width: var(--content-max-wide);
+  }
 }
 
 .page-header {
@@ -743,8 +788,88 @@ code {
   margin-bottom: var(--space-4);
 }
 
+@media (max-width: var(--bp-tablet)) {
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .panel-grid.four-up {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: var(--bp-desktop)) {
+  .panel-grid.four-up {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: var(--bp-tablet)) {
+  .panel-grid.four-up {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive grid utilities */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: var(--bp-tablet)) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: var(--bp-desktop)) {
+  .grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: var(--bp-tablet)) {
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: var(--bp-desktop)) {
+  .grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: var(--bp-tablet)) {
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Auto-fit grid for flexible card layouts */
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.grid-auto-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
 }
 
 .protocol-card {
@@ -5487,7 +5612,7 @@ h1, h2, h3 {
    Mobile responsive — sidebar drawer
    -------------------------------------------------------------------------- */
 
-@media (max-width: 1024px) {
+@media (max-width: var(--bp-desktop)) {
   .app-shell {
     grid-template-columns: 1fr;
   }
@@ -5497,8 +5622,7 @@ h1, h2, h3 {
     left: 0;
     top: 0;
     z-index: 100;
-    width: 280px;
-    max-width: 85vw;
+    width: min(280px, 85vw);
     height: 100vh;
     transform: translateX(-100%);
     transition: transform var(--dur-base) var(--ease);
@@ -5537,7 +5661,7 @@ h1, h2, h3 {
 }
 
 /* Sidebar overlay when open on mobile */
-@media (max-width: 1024px) {
+@media (max-width: var(--bp-desktop)) {
   .sidebar-open ~ .app-main::before {
     content: "";
     position: fixed;
@@ -5549,11 +5673,44 @@ h1, h2, h3 {
 }
 
 /* Ensure topbar stays above sidebar on mobile */
-@media (max-width: 1024px) {
+@media (max-width: var(--bp-desktop)) {
   .topbar {
     position: sticky;
     top: 0;
     z-index: 50;
+  }
+}
+
+/* Mobile header improvements */
+@media (max-width: var(--bp-tablet)) {
+  .topbar-context {
+    display: none;
+  }
+
+  .topbar-meta {
+    display: none;
+  }
+
+  .topbar-brand {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .topbar-wordmark {
+    width: 140px;
+    height: 28px;
+  }
+}
+
+@media (max-width: var(--bp-mobile)) {
+  .topbar {
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .topbar-wordmark {
+    width: 120px;
+    height: 24px;
   }
 }
 

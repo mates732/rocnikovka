@@ -24,6 +24,7 @@ type PlantOption = {
   exemplar_id: string;
   treatment_percentage: number;
   pot_id: string;
+  sowing_date: string | null;
 };
 
 type FormValues = {
@@ -72,10 +73,27 @@ function validateForm(values: FormValues): FormIssue[] {
   return issues;
 }
 
-function buildUploadInput(values: FormValues): UploadImageInput {
+/**
+ * Calculate experiment day from sowing date and observation date.
+ * Day 0 = sowing date. Day 1 = following calendar day.
+ * Uses local date comparison to avoid timezone issues.
+ */
+function calculateExperimentDay(sowingDate: string | null, observationDate: string): number {
+  if (!sowingDate) return 0;
+  const sow = new Date(sowingDate + "T00:00:00");
+  const obs = new Date(observationDate + "T00:00:00");
+  if (isNaN(sow.getTime()) || isNaN(obs.getTime())) return 0;
+  const diff = obs.getTime() - sow.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  return Math.max(0, days);
+}
+
+function buildUploadInput(values: FormValues, sowingDate: string | null): UploadImageInput {
+  const experimentDay = calculateExperimentDay(sowingDate, values.experiment_day);
+
   const input: UploadImageInput = {
     plant_id: values.plant_id,
-    experiment_day: Number(values.experiment_day),
+    experiment_day: experimentDay,
     timestamp: values.timestamp,
     camera_id: values.camera_id,
     image_quality_status: "PASS",
@@ -113,6 +131,7 @@ export function QuickCapturePage({ services: deps = services }: QuickCapturePage
             exemplar_id: p.exemplar_id,
             treatment_percentage: p.treatment_percentage,
             pot_id: p.pot_id,
+            sowing_date: p.sowing_date ?? null,
           }));
           options.sort((a, b) => {
             const groupOrder = { G1: 1, G2: 2, G3: 3 };
@@ -187,7 +206,8 @@ export function QuickCapturePage({ services: deps = services }: QuickCapturePage
     setSuccess(null);
 
     try {
-      const input = buildUploadInput(values);
+      const sowingDate = selectedPlant?.sowing_date ?? null;
+      const input = buildUploadInput(values, sowingDate);
       setUploadProgress(30);
 
       // Upload image
