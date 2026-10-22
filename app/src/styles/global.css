@@ -5061,6 +5061,8 @@ h1, h2, h3 {
   background: var(--surface-muted);
   margin-bottom: var(--space-5);
   position: relative;
+  width: 100%;
+  max-width: 100%;
 }
 
 .capture-preview img {
@@ -5068,6 +5070,7 @@ h1, h2, h3 {
   height: 100%;
   object-fit: cover;
   display: block;
+  max-width: 100%;
 }
 
 .capture-placeholder {
@@ -5088,24 +5091,109 @@ h1, h2, h3 {
   opacity: 0.4;
 }
 
+/* Responsive form grid - single column on mobile, multi-column on desktop */
 .capture-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--space-4);
   margin-bottom: var(--space-4);
 }
 
-.form-field.span-2 {
-  grid-column: span 2;
+@media (min-width: 600px) {
+  .capture-form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
 }
 
+.form-field.span-2 {
+  grid-column: span 1;
+}
+
+@media (min-width: 600px) {
+  .form-field.span-2 {
+    grid-column: span 2;
+  }
+}
+
+/* Responsive input-with-action - stacks on mobile */
 .input-with-action {
   display: flex;
+  flex-direction: column;
   gap: var(--space-2);
 }
 
+@media (min-width: 480px) {
+  .input-with-action {
+    flex-direction: row;
+  }
+}
+
 .input-with-action input {
-  flex: 1;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 480px) {
+  .input-with-action input {
+    flex: 1;
+  }
+}
+
+/* Responsive form actions - stack on mobile */
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+@media (min-width: 480px) {
+  .form-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+.form-actions .btn {
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .form-actions .btn {
+    width: auto;
+  }
+}
+
+/* Ensure form fields don't overflow */
+.capture-form .form-field {
+  min-width: 0;
+}
+
+.capture-form .form-field input,
+.capture-form .form-field textarea,
+.capture-form .form-field select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Capture preview responsive */
+.capture-preview {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Ensure evidence thumb doesn't overflow */
+.capture-plant-selector .capture-exemplar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 480px) {
+  .capture-plant-selector .capture-exemplar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  }
 }
 
 .capture-progress {
