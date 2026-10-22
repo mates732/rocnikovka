@@ -446,8 +446,6 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       }
 
       const timestamp = str(form.get("timestamp"), "timestamp");
-      // Image ids follow the existing convention: IMG-YYYYMMDD-HHMMSS-XXX,
-      // where the timestamp is the CAPTURE timestamp, not the upload time.
       const imageId = await resolveImageId(env.DB, timestamp);
       const bytes = await file.arrayBuffer();
       const key = buildImageObjectKey(imageId, contentType);

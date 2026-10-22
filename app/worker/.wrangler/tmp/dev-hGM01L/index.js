@@ -6544,9 +6544,13 @@ async function handleRequest(request, env2) {
         return errorResponse(413, "image.too_large", "Image exceeds maximum allowed size", {}, headers);
       }
       const timestamp = str(form.get("timestamp"), "timestamp");
+      console.log("[DEBUG] timestamp:", timestamp);
       const imageId = await resolveImageId(env2.DB, timestamp);
+      console.log("[DEBUG] imageId:", imageId);
       const bytes = await file.arrayBuffer();
+      console.log("[DEBUG] bytes length:", bytes.byteLength);
       const key = buildImageObjectKey(imageId, contentType);
+      console.log("[DEBUG] key:", key);
       const record = {
         image_id: imageId,
         plant_id: str(form.get("plant_id"), "plant_id"),
@@ -6560,12 +6564,21 @@ async function handleRequest(request, env2) {
         failure_code: parseOptionalEnum(form.get("failure_code"), "failure_code", FAILURE_CODES),
         notes: optionalStr(form.get("notes"))
       };
+      console.log("[DEBUG] record:", record);
       try {
         await images.create(record);
+        console.log("[DEBUG] D1 create succeeded");
       } catch (error3) {
+        console.error("[DEBUG] D1 create error:", error3);
         throw error3;
       }
-      await imageStore.put(key, bytes, contentType);
+      try {
+        await imageStore.put(key, bytes, contentType);
+        console.log("[DEBUG] R2 put succeeded");
+      } catch (error3) {
+        console.error("[DEBUG] R2 put error:", error3);
+        throw error3;
+      }
       return created(record, headers);
     }
     const imageFileMatch = path.match(/^\/api\/images\/([^/]+)\/file$/);

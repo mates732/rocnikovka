@@ -308,24 +308,24 @@ export class D1ImageRecordRepository {
       throw new D1ReferenceError([`plant_id:reference.missing_parent`]);
     }
 
-    await await runWrite(
+await runWrite(
           this.db.prepare(
               `INSERT INTO image_records (image_id, plant_id, timestamp, experiment_day, image_path, camera_id,
                                     image_quality_status, calibration_status, cal_ref_id, failure_code, notes)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ),
-          input.image_id,
-          input.plant_id,
-          input.timestamp,
-          input.experiment_day,
-          input.image_path,
-          input.camera_id,
-          input.image_quality_status,
-          input.calibration_status,
-          orNull(input.cal_ref_id),
-          orNull(input.failure_code),
-          orNull(input.notes)
-        );
+       ),
+           input.image_id,
+           input.plant_id,
+           input.timestamp,
+           input.experiment_day,
+           input.image_path,
+           orNull(input.camera_id),
+           input.image_quality_status,
+           input.calibration_status,
+           orNull(input.cal_ref_id),
+           orNull(input.failure_code),
+           orNull(input.notes)
+         );
   }
 }
 
