@@ -45,7 +45,7 @@ export type UploadImageInput = {
   plant_id: string; // PLT-XXX, must exist
   timestamp: string; // ISO YYYY-MM-DDTHH:MM:SS
   experiment_day: number; // integer >= 1, never derived from timestamp
-  camera_id: string;
+  camera_id?: string; // Optional camera identifier
   image_quality_status: ImageQualityStatus; // PASS | WARN | FAIL
   calibration_status: CalibrationStatus; // pass | warn | fail
   cal_ref_id?: string;

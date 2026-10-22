@@ -330,7 +330,10 @@ export function validateImageRecord(input: import("../types.js").ImageRecord): V
   issues.push(...validateRequired("image_record", input.image_id, "timestamp", input.timestamp));
   issues.push(...validateRequired("image_record", input.image_id, "experiment_day", input.experiment_day));
   issues.push(...validateRequired("image_record", input.image_id, "image_path", input.image_path));
-  issues.push(...validateRequired("image_record", input.image_id, "camera_id", input.camera_id));
+  // camera_id is now optional
+  if (input.camera_id !== undefined && input.camera_id !== "") {
+    issues.push(...validateRequired("image_record", input.image_id, "camera_id", input.camera_id));
+  }
   issues.push(...validateRequired("image_record", input.image_id, "image_quality_status", input.image_quality_status));
   issues.push(...validateRequired("image_record", input.image_id, "calibration_status", input.calibration_status));
 

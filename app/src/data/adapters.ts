@@ -124,7 +124,7 @@ export class HttpImageService implements ImageService {
     form.append("plant_id", input.plant_id);
     form.append("timestamp", input.timestamp);
     form.append("experiment_day", String(input.experiment_day));
-    form.append("camera_id", input.camera_id);
+    if (input.camera_id) form.append("camera_id", input.camera_id);
     form.append("image_quality_status", input.image_quality_status);
     form.append("calibration_status", input.calibration_status);
     if (input.cal_ref_id) form.append("cal_ref_id", input.cal_ref_id);

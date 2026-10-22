@@ -31,7 +31,7 @@ type FormValues = {
   plant_id: string;
   experiment_day: string;
   timestamp: string;
-  camera_id: string;
+  camera_id?: string;
   notes: string;
   file: File | null;
 };
@@ -67,7 +67,6 @@ function validateForm(values: FormValues): FormIssue[] {
   else if (!TIMESTAMP_SECOND_RE.test(values.timestamp)) {
     add("timestamp", "timestamp.invalid", "Timestamp must look like YYYY-MM-DDTHH:MM:SS.");
   }
-  if (!values.camera_id) add("camera_id", "required", "Camera ID is required.");
   if (!values.file) add("file", "required", "Select an image file.");
 
   return issues;
@@ -447,24 +446,6 @@ export function QuickCapturePage({ services: deps = services }: QuickCapturePage
             </div>
             {issues.some((i) => i.field === "timestamp") && (
               <p className="form-error">{issues.find((i) => i.field === "timestamp")!.message}</p>
-            )}
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="capture-camera-id" className="form-label">
-              Camera ID <span className="form-required" aria-hidden="true">*</span>
-            </label>
-            <input
-              id="capture-camera-id"
-              type="text"
-              value={values.camera_id}
-              onChange={(e) => handleFieldChange("camera_id", e.target.value)}
-              placeholder="CAM-01"
-              disabled={submitting}
-              required
-            />
-            {issues.some((i) => i.field === "camera_id") && (
-              <p className="form-error">{issues.find((i) => i.field === "camera_id")!.message}</p>
             )}
           </div>
 
