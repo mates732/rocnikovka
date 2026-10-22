@@ -5,7 +5,7 @@ CREATE TABLE image_records (
   timestamp TEXT NOT NULL,
   experiment_day INTEGER NOT NULL CHECK (experiment_day >= 1),
   image_path TEXT NOT NULL,
-  camera_id TEXT NOT NULL,
+  camera_id TEXT,
   image_quality_status TEXT NOT NULL CHECK (image_quality_status IN ('PASS','WARN','FAIL')),
   calibration_status TEXT NOT NULL CHECK (calibration_status IN ('pass','warn','fail')),
   cal_ref_id TEXT,

@@ -458,7 +458,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
         timestamp,
         experiment_day: num(form.get("experiment_day"), "experiment_day"),
         image_path: key,
-        camera_id: str(form.get("camera_id"), "camera_id"),
+        camera_id: optionalStr(form.get("camera_id")),
         image_quality_status: parseEnum(form.get("image_quality_status"), "image_quality_status", IMAGE_QUALITY_STATUSES),
         calibration_status: parseEnum(form.get("calibration_status"), "calibration_status", CALIBRATION_STATUSES),
         cal_ref_id: optionalStr(form.get("cal_ref_id")),
