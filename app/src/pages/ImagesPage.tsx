@@ -10,6 +10,7 @@ import { ImageViewer } from "../components/ImageViewer";
 import { PageHeader } from "../components/PageHeader";
 import { useDayContext } from "../hooks/useDayContext";
 import { services } from "../data/adapters";
+import { apiUrl } from "../data/apiBase";
 import { normalizeTimestampToSeconds } from "./ExperimentPages";
 import { formatScientificLabel, formatPlantShortLabel } from "../utils/plantLabels";
 import type { ImageService, PlantService } from "../services/interfaces";
@@ -63,7 +64,7 @@ const ACCEPTED_FILE_TYPES = new Set(["image/jpeg", "image/png"]);
 
 /** The server-backed URL for a stored RAW image (controlled route only). */
 export function imageFileUrl(imageId: string): string {
-  return `/api/images/${encodeURIComponent(imageId)}/file`;
+  return apiUrl(`/api/images/${encodeURIComponent(imageId)}/file`);
 }
 
 export type ImageFormValues = {
