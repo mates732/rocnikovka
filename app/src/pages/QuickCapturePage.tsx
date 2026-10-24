@@ -189,6 +189,10 @@ export function QuickCapturePage({ services: deps = services }: QuickCapturePage
     setIssues((prev) => prev.filter((i) => i.field !== "experiment_day"));
   };
 
+  const handleTriggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (submitting) return;
@@ -389,17 +393,39 @@ export function QuickCapturePage({ services: deps = services }: QuickCapturePage
 
       {/* Capture Form */}
       <form className="panel capture-form" onSubmit={handleSubmit} noValidate>
-        <div className="capture-preview" aria-label="Image preview">
+        <div className="capture-preview" aria-label="Image preview" role="button" tabIndex={0} onClick={handleTriggerFileInput} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTriggerFileInput(); } }}>
           {previewUrl ? (
-            <img src={previewUrl} alt="Image preview" />
+            <>
+              <img src={previewUrl} alt="Image preview" />
+              <div className="capture-preview__overlay">
+                <span className="capture-preview__overlay-label">Změnit fotku</span>
+                <button
+                  type="button"
+                  className="capture-preview__overlay-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleTriggerFileInput();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleTriggerFileInput();
+                    }
+                  }}
+                >
+                  Vybrat jinou
+                </button>
+              </div>
+            </>
           ) : (
-            <div className="capture-placeholder">
+            <div className="capture-placeholder" role="button" tabIndex={0} onClick={handleTriggerFileInput} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTriggerFileInput(); } }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                 <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
                 <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
                 <path d="M21 15l-5-5L5 17" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <p>Select an image file or capture from camera</p>
+              <p className="capture-placeholder__label">Přidat fotku</p>
+              <p className="capture-placeholder__hint">Vyfotit nebo vybrat ze zařízení</p>
             </div>
           )}
         </div>
@@ -449,7 +475,7 @@ export function QuickCapturePage({ services: deps = services }: QuickCapturePage
             )}
           </div>
 
-          <div className="form-field">
+<div className="form-field">
             <label htmlFor="capture-file" className="form-label">
               Image file <span className="form-required" aria-hidden="true">*</span>
             </label>
@@ -464,18 +490,6 @@ export function QuickCapturePage({ services: deps = services }: QuickCapturePage
               required
               style={{ display: "none" }}
             />
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={submitting}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
-                <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              <span>Open camera / select file</span>
-            </button>
             {issues.some((i) => i.field === "file") && (
               <p className="form-error">{issues.find((i) => i.field === "file")!.message}</p>
             )}

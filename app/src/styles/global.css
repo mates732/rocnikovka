@@ -5081,14 +5081,113 @@ h1, h2, h3 {
   height: 100%;
   padding: var(--space-6);
   text-align: center;
-  color: var(--text-faint);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-muted);
+  transition: all var(--dur-fast) var(--ease);
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.capture-placeholder:hover:not(:disabled),
+.capture-placeholder:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  outline: none;
+}
+
+.capture-placeholder:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .capture-placeholder svg {
-  width: 48px;
-  height: 48px;
-  margin-bottom: var(--space-3);
-  opacity: 0.4;
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--space-4);
+  opacity: 0.6;
+  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.capture-placeholder:hover svg,
+.capture-placeholder:focus-visible svg {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.capture-placeholder__label {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.capture-placeholder__hint {
+  font-size: var(--fs-sm);
+  color: var(--text-faint);
+}
+
+.capture-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  max-width: 100%;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.capture-preview img:hover {
+  opacity: 0.9;
+}
+
+.capture-preview__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  color: white;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  text-align: center;
+  pointer-events: none;
+}
+
+.capture-preview:hover .capture-preview__overlay,
+.capture-preview:focus-within .capture-preview__overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.capture-preview__overlay-label {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.capture-preview__overlay-btn {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid white;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: white;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+
+.capture-preview__overlay-btn:hover {
+  background: white;
+  color: var(--text-primary);
 }
 
 /* Responsive form grid - single column on mobile, multi-column on desktop */
